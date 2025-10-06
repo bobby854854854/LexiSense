@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export interface Contract {
   id: string;
@@ -22,6 +23,8 @@ export interface Contract {
 
 interface ContractTableProps {
   contracts: Contract[];
+  selectedContracts?: string[];
+  onSelectionChange?: (selected: string[]) => void;
   onRowClick?: (contract: Contract) => void;
 }
 
@@ -32,12 +35,22 @@ const statusColors = {
   draft: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
 };
 
-export function ContractTable({ contracts, onRowClick }: ContractTableProps) {
+export function ContractTable({ contracts, selectedContracts = [], onSelectionChange, onRowClick }: ContractTableProps) {
+  const handleSelectContract = (contractId: string, checked: boolean) => {
+    if (!onSelectionChange) return;
+    
+    if (checked) {
+      onSelectionChange([...selectedContracts, contractId]);
+    } else {
+      onSelectionChange(selectedContracts.filter(id => id !== contractId));
+    }
+  };
   return (
     <div className="rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
+            {onSelectionChange && <TableHead className="w-12"></TableHead>}
             <TableHead>
               <Button
                 variant="ghost"
@@ -62,9 +75,22 @@ export function ContractTable({ contracts, onRowClick }: ContractTableProps) {
             <TableRow
               key={contract.id}
               className="cursor-pointer hover-elevate"
-              onClick={() => onRowClick?.(contract)}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest('input[type="checkbox"]')) {
+                  return;
+                }
+                onRowClick?.(contract);
+              }}
               data-testid={`row-contract-${contract.id}`}
             >
+              {onSelectionChange && (
+                <TableCell>
+                  <Checkbox
+                    checked={selectedContracts.includes(contract.id)}
+                    onCheckedChange={(checked) => handleSelectContract(contract.id, checked as boolean)}
+                  />
+                </TableCell>
+              )}
               <TableCell className="font-medium">{contract.title}</TableCell>
               <TableCell>{contract.counterparty}</TableCell>
               <TableCell className="text-muted-foreground">

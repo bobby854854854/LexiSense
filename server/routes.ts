@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { insertContractSchema, type AIInsight } from "@shared/schema";
 import OpenAI from "openai";
 import { contractAnalysisSchema, contractDraftSchema, validateRequest, sanitizeObject } from "./validation";
+import { validateAIResponse } from "./aiResponseValidator";
+import { getContractAnalytics } from "./analytics";
 
 // Provide a safe dev fallback when OPENAI_API_KEY isn't provided so the
 // dev server can start and AI endpoints return a harmless default.
@@ -78,29 +80,42 @@ Format your response as JSON with this structure:
       temperature: 0.3,
     });
 
-    const content = completion.choices[0].message.content || "{}";
-    let result;
-    try {
-      result = JSON.parse(content);
-      // Validate the structure to prevent malicious objects
-      if (typeof result !== 'object' || result === null) {
-        throw new Error('Invalid response format');
+    const content = completion.choices[0].message.content;
+    let parsedContent = {
+      insights: [],
+      value: null,
+      effectiveDate: null,
+      expiryDate: null,
+      riskLevel: "low"
+    };
+    
+    if (content && typeof content === 'string' && content.trim().length > 0) {
+      try {
+        const trimmedContent = content.trim();
+        if (trimmedContent.startsWith('{') && trimmedContent.endsWith('}')) {
+          const parsed = JSON.parse(trimmedContent);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            parsedContent = parsed;
+          }
+        }
+      } catch (error) {
+        console.error("JSON parsing error: - routes.ts:102", error);
       }
-    } catch {
-      result = {};
     }
     
+    const validatedResult = validateAIResponse(parsedContent);
+    
     return {
-      insights: result.insights || [],
+      insights: validatedResult.insights,
       extractedData: {
-        value: result.value,
-        effectiveDate: result.effectiveDate,
-        expiryDate: result.expiryDate,
-        riskLevel: result.riskLevel || "low",
+        value: validatedResult.value || null,
+        effectiveDate: validatedResult.effectiveDate || null,
+        expiryDate: validatedResult.expiryDate || null,
+        riskLevel: validatedResult.riskLevel,
       },
     };
   } catch (error) {
-    console.error("AI analysis error: - routes.ts:89", error);
+    console.error("AI analysis error: - routes.ts:118", error);
     return {
       insights: [
         {
@@ -171,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(contract);
     } catch (error) {
-      console.error("Contract analysis error: - routes.ts:160", error);
+      console.error("Contract analysis error: - routes.ts:189", error);
       res.status(500).json({ error: "Failed to analyze contract" });
     }
   });
@@ -197,6 +212,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete contract" });
+    }
+  });
+
+  app.get("/api/analytics", async (req, res) => {
+    try {
+      const analytics = await getContractAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error("Analytics error: - routes.ts:223", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
     }
   });
 
@@ -237,7 +262,7 @@ Make it professional and ready for review.`;
       const generatedContract = completion.choices[0].message.content;
       res.json({ contract: generatedContract });
     } catch (error) {
-      console.error("Contract drafting error: - routes.ts:226", error);
+      console.error("Contract drafting error: - routes.ts:265", error);
       res.status(500).json({ error: "Failed to generate contract" });
     }
   });

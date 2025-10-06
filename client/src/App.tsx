@@ -13,6 +13,7 @@ import Contracts from "@/pages/contracts";
 import ContractUpload from "@/pages/contract-upload";
 import AIDrafting from "@/pages/ai-drafting";
 import Analytics from "@/pages/analytics";
+import ContractDetail from "@/pages/contract-detail";
 
 const sidebarStyle = {
   "--sidebar-width": "16rem",
@@ -24,6 +25,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Dashboard} />
       <Route path="/contracts" component={Contracts} />
+      <Route path="/contracts/:id" component={ContractDetail} />
       <Route path="/upload" component={ContractUpload} />
       <Route path="/ai-drafting" component={AIDrafting} />
       <Route path="/analytics" component={Analytics} />

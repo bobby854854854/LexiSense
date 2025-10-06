@@ -139,9 +139,7 @@ export default function Dashboard() {
                     value={contract.value || "$0"}
                     expiryDate={contract.expiryDate || "N/A"}
                     riskLevel={contract.riskLevel as any}
-                    onClick={() => {
-                      console.log("Contract clicked:", String(contract.id).replace(/[\r\n\t]/g, ''));
-                    }}
+                    onClick={() => setLocation(`/contracts/${contract.id}`)}
                   />
                 ))}
               </div>

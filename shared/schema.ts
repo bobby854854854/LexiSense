@@ -6,11 +6,27 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  role: text("role").notNull().default("user"),
+  isActive: text("is_active").notNull().default("true"),
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
+  email: true,
+  password: true,
+  firstName: true,
+  lastName: true,
+});
+
+export const loginUserSchema = createInsertSchema(users).pick({
+  email: true,
   password: true,
 });
 
@@ -29,6 +45,10 @@ export const contracts = pgTable("contracts", {
   riskLevel: text("risk_level"),
   originalText: text("original_text"),
   aiInsights: jsonb("ai_insights"),
+  userId: varchar("user_id").references(() => users.id),
+  tags: jsonb("tags").default([]),
+  isTemplate: text("is_template").notNull().default("false"),
+  templateCategory: text("template_category"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

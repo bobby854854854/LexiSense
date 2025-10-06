@@ -1,5 +1,5 @@
 {
-  "name": "rest-express",
+  "name": "lexisense",
   "version": "1.0.0",
   "type": "module",
   "license": "MIT",
@@ -10,7 +10,9 @@
     "check": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "db:setup": "tsx scripts/setup-db.ts",
+    "env:check": "tsx scripts/check-env.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
