@@ -1,64 +1,64 @@
-import { useCallback, useState } from "react";
-import { Upload, FileText, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { useCallback, useState } from 'react'
+import { Upload, FileText, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 
 interface UploadZoneProps {
-  onFileSelect?: (file: File) => void;
-  acceptedTypes?: string;
-  testId?: string;
+  onFileSelect?: (file: File) => void
+  acceptedTypes?: string
+  testId?: string
 }
 
 export function UploadZone({
   onFileSelect,
-  acceptedTypes = ".pdf,.doc,.docx",
+  acceptedTypes = '.pdf,.doc,.docx',
   testId,
 }: UploadZoneProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
+    e.preventDefault()
+    setIsDragging(true)
+  }, [])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
+    e.preventDefault()
+    setIsDragging(false)
+  }, [])
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      const file = e.dataTransfer.files[0];
+      e.preventDefault()
+      setIsDragging(false)
+      const file = e.dataTransfer.files[0]
       if (file) {
-        setSelectedFile(file);
-        onFileSelect?.(file);
+        setSelectedFile(file)
+        onFileSelect?.(file)
       }
     },
     [onFileSelect]
-  );
+  )
 
   const handleFileInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
+      const file = e.target.files?.[0]
       if (file) {
-        setSelectedFile(file);
-        onFileSelect?.(file);
+        setSelectedFile(file)
+        onFileSelect?.(file)
       }
     },
     [onFileSelect]
-  );
+  )
 
   const clearFile = useCallback(() => {
-    setSelectedFile(null);
-  }, []);
+    setSelectedFile(null)
+  }, [])
 
   return (
     <Card
       className={`p-8 border-2 border-dashed transition-colors ${
-        isDragging ? "border-primary bg-primary/5" : "border-border"
+        isDragging ? 'border-primary bg-primary/5' : 'border-border'
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -121,5 +121,5 @@ export function UploadZone({
         </div>
       )}
     </Card>
-  );
+  )
 }

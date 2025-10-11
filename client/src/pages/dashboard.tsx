@@ -1,100 +1,95 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { StatCard } from "@/components/stat-card";
-import { ContractCard } from "@/components/contract-card";
-import { ActivityFeed } from "@/components/activity-feed";
-import { RiskIndicator } from "@/components/risk-indicator";
-import {
-  FileText,
-  Clock,
-  Sparkles,
-  TrendingUp,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
-import { getContracts } from "@/lib/api";
-import { useLocation } from "wouter";
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { StatCard } from '@/components/stat-card'
+import { ContractCard } from '@/components/contract-card'
+import { ActivityFeed } from '@/components/activity-feed'
+import { RiskIndicator } from '@/components/risk-indicator'
+import { FileText, Clock, Sparkles, TrendingUp } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Plus } from 'lucide-react'
+import { getContracts } from '@/lib/api'
+import { useLocation } from 'wouter'
 
 export default function Dashboard() {
-  const [, setLocation] = useLocation();
+  const [, setLocation] = useLocation()
   const { data: contracts = [], isLoading } = useQuery({
-    queryKey: ["/api/contracts"],
+    queryKey: ['/api/contracts'],
     queryFn: getContracts,
-  });
+  })
 
-  const activeContracts = contracts.filter((c) => c.status === "active");
-  const expiringContracts = contracts.filter((c) => c.status === "expiring");
-  const highRiskContracts = contracts.filter((c) => c.riskLevel === "high");
-  const mediumRiskContracts = contracts.filter((c) => c.riskLevel === "medium");
-  const lowRiskContracts = contracts.filter((c) => c.riskLevel === "low");
+  const activeContracts = contracts.filter((c) => c.status === 'active')
+  const expiringContracts = contracts.filter((c) => c.status === 'expiring')
+  const highRiskContracts = contracts.filter((c) => c.riskLevel === 'high')
+  const mediumRiskContracts = contracts.filter((c) => c.riskLevel === 'medium')
+  const lowRiskContracts = contracts.filter((c) => c.riskLevel === 'low')
 
-  const recentContracts = contracts.slice(0, 3);
+  const recentContracts = contracts.slice(0, 3)
 
   const stats = [
     {
-      title: "Active Contracts",
+      title: 'Active Contracts',
       value: activeContracts.length.toString(),
       icon: FileText,
       trend: `${contracts.length} total contracts`,
-      trendDirection: "up" as const,
-      testId: "card-stat-active",
+      trendDirection: 'up' as const,
+      testId: 'card-stat-active',
     },
     {
-      title: "Expiring Soon",
+      title: 'Expiring Soon',
       value: expiringContracts.length.toString(),
       icon: Clock,
-      trend: "Next 30 days",
-      trendDirection: "down" as const,
-      testId: "card-stat-expiring",
+      trend: 'Next 30 days',
+      trendDirection: 'down' as const,
+      testId: 'card-stat-expiring',
     },
     {
-      title: "AI Analyzed",
+      title: 'AI Analyzed',
       value: contracts.filter((c) => c.aiInsights).length.toString(),
       icon: Sparkles,
-      trend: "Contracts with AI insights",
-      trendDirection: "up" as const,
-      testId: "card-stat-ai",
+      trend: 'Contracts with AI insights',
+      trendDirection: 'up' as const,
+      testId: 'card-stat-ai',
     },
     {
-      title: "High Risk",
+      title: 'High Risk',
       value: highRiskContracts.length.toString(),
       icon: TrendingUp,
-      trend: "Requires attention",
-      trendDirection: "down" as const,
-      testId: "card-stat-savings",
+      trend: 'Requires attention',
+      trendDirection: 'down' as const,
+      testId: 'card-stat-savings',
     },
-  ];
+  ]
 
   const activities = [
     {
-      id: "1",
-      type: "contract_uploaded" as const,
-      title: "New Contract Uploaded",
-      description: "Master Service Agreement with Acme Corp",
-      timestamp: "2 minutes ago",
+      id: '1',
+      type: 'contract_uploaded' as const,
+      title: 'New Contract Uploaded',
+      description: 'Master Service Agreement with Acme Corp',
+      timestamp: '2 minutes ago',
     },
     {
-      id: "2",
-      type: "analysis_complete" as const,
-      title: "AI Analysis Complete",
-      description: "Contract analyzed - 3 key terms extracted",
-      timestamp: "15 minutes ago",
+      id: '2',
+      type: 'analysis_complete' as const,
+      title: 'AI Analysis Complete',
+      description: 'Contract analyzed - 3 key terms extracted',
+      timestamp: '15 minutes ago',
     },
     {
-      id: "3",
-      type: "risk_detected" as const,
-      title: "Risk Alert",
-      description: "Non-standard liability clause detected in TechCo contract",
-      timestamp: "1 hour ago",
+      id: '3',
+      type: 'risk_detected' as const,
+      title: 'Risk Alert',
+      description: 'Non-standard liability clause detected in TechCo contract',
+      timestamp: '1 hour ago',
     },
     {
-      id: "4",
-      type: "expiring_soon" as const,
-      title: "Contract Expiring",
-      description: "Software License Agreement expires in 45 days",
-      timestamp: "3 hours ago",
+      id: '4',
+      type: 'expiring_soon' as const,
+      title: 'Contract Expiring',
+      description: 'Software License Agreement expires in 45 days',
+      timestamp: '3 hours ago',
     },
-  ];
+  ]
 
   return (
     <div className="space-y-6">
@@ -105,7 +100,10 @@ export default function Dashboard() {
             Welcome back! Here's your contract portfolio overview.
           </p>
         </div>
-        <Button onClick={() => setLocation("/contracts")} data-testid="button-new-contract">
+        <Button
+          onClick={() => setLocation('/contracts')}
+          data-testid="button-new-contract"
+        >
           <Plus className="h-4 w-4 mr-2" />
           New Contract
         </Button>
@@ -122,10 +120,14 @@ export default function Dashboard() {
           <div>
             <h2 className="text-xl font-semibold mb-4">Recent Contracts</h2>
             {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading contracts...</div>
+              <div className="text-center py-8 text-muted-foreground">
+                Loading contracts...
+              </div>
             ) : recentContracts.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No contracts yet. Upload your first contract to get started!</p>
+                <p>
+                  No contracts yet. Upload your first contract to get started!
+                </p>
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
@@ -136,8 +138,8 @@ export default function Dashboard() {
                     title={contract.title}
                     counterparty={contract.counterparty}
                     status={contract.status as any}
-                    value={contract.value || "$0"}
-                    expiryDate={contract.expiryDate || "N/A"}
+                    value={contract.value || '$0'}
+                    expiryDate={contract.expiryDate || 'N/A'}
                     riskLevel={contract.riskLevel as any}
                     onClick={() => setLocation(`/contracts/${contract.id}`)}
                   />
@@ -179,5 +181,5 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-  );
+  )
 }

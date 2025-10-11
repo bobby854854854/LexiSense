@@ -1,5 +1,4 @@
-LexiSense
-=========
+# LexiSense
 
 Quickstart (Windows PowerShell)
 
@@ -20,6 +19,7 @@ npm install
 ```
 
 **Security Features:**
+
 - Rate limiting (100 requests per 15 minutes per IP)
 - Input validation and sanitization
 - CSRF protection
@@ -64,6 +64,7 @@ NODE_ENV=development
 ```
 
 **Security Best Practices:**
+
 - All user inputs are validated and sanitized
 - API endpoints have rate limiting
 - Error handling prevents information leakage

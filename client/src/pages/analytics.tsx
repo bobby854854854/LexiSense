@@ -1,14 +1,14 @@
-import * as React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import * as React from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select'
 export default function Analytics(): React.ReactElement {
-  const timeRange = "12months";
+  const timeRange = '12months'
 
   return (
     <div className="space-y-6">
@@ -102,10 +102,10 @@ export default function Analytics(): React.ReactElement {
           <CardContent>
             <div className="space-y-4">
               {[
-                { type: "Master Service Agreement", count: 342, percent: 35 },
-                { type: "Software License", count: 289, percent: 30 },
-                { type: "Consulting Agreement", count: 234, percent: 24 },
-                { type: "NDA", count: 106, percent: 11 },
+                { type: 'Master Service Agreement', count: 342, percent: 35 },
+                { type: 'Software License', count: 289, percent: 30 },
+                { type: 'Consulting Agreement', count: 234, percent: 24 },
+                { type: 'NDA', count: 106, percent: 11 },
               ].map((item) => (
                 <div key={item.type} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
@@ -131,9 +131,24 @@ export default function Analytics(): React.ReactElement {
           <CardContent>
             <div className="space-y-4">
               {[
-                { level: "Low Risk", count: 1201, percent: 85, color: "bg-green-500" },
-                { level: "Medium Risk", count: 34, percent: 10, color: "bg-yellow-500" },
-                { level: "High Risk", count: 12, percent: 5, color: "bg-red-500" },
+                {
+                  level: 'Low Risk',
+                  count: 1201,
+                  percent: 85,
+                  color: 'bg-green-500',
+                },
+                {
+                  level: 'Medium Risk',
+                  count: 34,
+                  percent: 10,
+                  color: 'bg-yellow-500',
+                },
+                {
+                  level: 'High Risk',
+                  count: 12,
+                  percent: 5,
+                  color: 'bg-red-500',
+                },
               ].map((item) => (
                 <div key={item.level} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
@@ -160,11 +175,15 @@ export default function Analytics(): React.ReactElement {
         <CardContent>
           <div className="space-y-4">
             {[
-              { name: "Acme Corporation", value: "$2.4M", contracts: 45 },
-              { name: "TechCo Industries", value: "$1.8M", contracts: 32 },
-              { name: "Global Consulting LLC", value: "$1.5M", contracts: 28 },
-              { name: "Enterprise Solutions Inc", value: "$1.2M", contracts: 24 },
-              { name: "Digital Services Co", value: "$980K", contracts: 19 },
+              { name: 'Acme Corporation', value: '$2.4M', contracts: 45 },
+              { name: 'TechCo Industries', value: '$1.8M', contracts: 32 },
+              { name: 'Global Consulting LLC', value: '$1.5M', contracts: 28 },
+              {
+                name: 'Enterprise Solutions Inc',
+                value: '$1.2M',
+                contracts: 24,
+              },
+              { name: 'Digital Services Co', value: '$980K', contracts: 19 },
             ].map((counterparty) => (
               <div
                 key={counterparty.name}
@@ -185,5 +204,5 @@ export default function Analytics(): React.ReactElement {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

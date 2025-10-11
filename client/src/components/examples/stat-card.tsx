@@ -1,5 +1,5 @@
-import { StatCard } from "../stat-card";
-import { FileText } from "lucide-react";
+import { StatCard } from '../stat-card'
+import { FileText } from 'lucide-react'
 
 export default function StatCardExample() {
   return (
@@ -13,5 +13,5 @@ export default function StatCardExample() {
         testId="card-stat-active"
       />
     </div>
-  );
+  )
 }

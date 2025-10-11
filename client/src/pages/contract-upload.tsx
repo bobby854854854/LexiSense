@@ -1,68 +1,68 @@
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Upload as UploadIcon, Loader2 } from "lucide-react";
-import { analyzeContract } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+} from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Sparkles, Upload as UploadIcon, Loader2 } from 'lucide-react'
+import { analyzeContract } from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
+import { useLocation } from 'wouter'
 
 export default function ContractUpload() {
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [title, setTitle] = useState("");
-  const [counterparty, setCounterparty] = useState("");
-  const [contractType, setContractType] = useState("");
-  const [contractText, setContractText] = useState("");
+  const [, setLocation] = useLocation()
+  const { toast } = useToast()
+  const queryClient = useQueryClient()
+  const [title, setTitle] = useState('')
+  const [counterparty, setCounterparty] = useState('')
+  const [contractType, setContractType] = useState('')
+  const [contractText, setContractText] = useState('')
 
   const analyzeMutation = useMutation({
     mutationFn: analyzeContract,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts'] })
       toast({
-        title: "Contract Uploaded Successfully",
-        description: "AI analysis complete. Contract added to your repository.",
-      });
-      setLocation("/contracts");
+        title: 'Contract Uploaded Successfully',
+        description: 'AI analysis complete. Contract added to your repository.',
+      })
+      setLocation('/contracts')
     },
     onError: () => {
       toast({
-        title: "Upload Failed",
-        description: "Failed to analyze contract. Please try again.",
-        variant: "destructive",
-      });
+        title: 'Upload Failed',
+        description: 'Failed to analyze contract. Please try again.',
+        variant: 'destructive',
+      })
     },
-  });
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!title || !counterparty || !contractText) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      });
-      return;
+        title: 'Missing Information',
+        description: 'Please fill in all required fields.',
+        variant: 'destructive',
+      })
+      return
     }
 
     analyzeMutation.mutate({
       text: contractText,
       title,
       counterparty,
-      contractType: contractType || "Other",
-    });
-  };
+      contractType: contractType || 'Other',
+    })
+  }
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -117,7 +117,9 @@ export default function ContractUpload() {
                 <SelectContent>
                   <SelectItem value="MSA">Master Service Agreement</SelectItem>
                   <SelectItem value="NDA">Non-Disclosure Agreement</SelectItem>
-                  <SelectItem value="SLA">Software License Agreement</SelectItem>
+                  <SelectItem value="SLA">
+                    Software License Agreement
+                  </SelectItem>
                   <SelectItem value="CSA">Consulting Agreement</SelectItem>
                   <SelectItem value="PA">Purchase Agreement</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
@@ -138,7 +140,8 @@ export default function ContractUpload() {
                 className="font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground">
-                Paste the contract text or upload a file (PDF support coming soon)
+                Paste the contract text or upload a file (PDF support coming
+                soon)
               </p>
             </div>
 
@@ -163,7 +166,7 @@ export default function ContractUpload() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setLocation("/contracts")}
+                onClick={() => setLocation('/contracts')}
                 data-testid="button-cancel"
               >
                 Cancel
@@ -173,5 +176,5 @@ export default function ContractUpload() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

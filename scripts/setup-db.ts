@@ -1,27 +1,27 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool } from '@neondatabase/serverless';
-import { migrate } from 'drizzle-orm/neon-serverless/migrator';
-import * as schema from '../shared/schema';
+import { drizzle } from 'drizzle-orm/neon-serverless'
+import { Pool } from '@neondatabase/serverless'
+import { migrate } from 'drizzle-orm/neon-serverless/migrator'
+import * as schema from '../shared/schema'
 
 async function setupDatabase() {
   if (!process.env.DATABASE_URL) {
-    console.error('DATABASE_URL is required');
-    process.exit(1);
+    console.error('DATABASE_URL is required')
+    process.exit(1)
   }
 
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const db = drizzle({ client: pool, schema });
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+  const db = drizzle({ client: pool, schema })
 
   try {
-    console.log('Setting up database...');
-    
+    console.log('Setting up database...')
+
     // Run migrations if they exist
     try {
-      await migrate(db, { migrationsFolder: './migrations' });
-      console.log('✅ Migrations completed');
+      await migrate(db, { migrationsFolder: './migrations' })
+      console.log('✅ Migrations completed')
     } catch (error) {
-      console.log('No migrations found, creating tables directly...');
-      
+      console.log('No migrations found, creating tables directly...')
+
       // Create tables directly from schema
       await db.execute(`
         CREATE TABLE IF NOT EXISTS users (
@@ -37,7 +37,7 @@ async function setupDatabase() {
           created_at TIMESTAMP DEFAULT NOW() NOT NULL,
           updated_at TIMESTAMP DEFAULT NOW() NOT NULL
         );
-      `);
+      `)
 
       await db.execute(`
         CREATE TABLE IF NOT EXISTS contracts (
@@ -59,18 +59,18 @@ async function setupDatabase() {
           created_at TIMESTAMP DEFAULT NOW() NOT NULL,
           updated_at TIMESTAMP DEFAULT NOW() NOT NULL
         );
-      `);
+      `)
 
-      console.log('✅ Tables created successfully');
+      console.log('✅ Tables created successfully')
     }
 
-    console.log('✅ Database setup completed');
+    console.log('✅ Database setup completed')
   } catch (error) {
-    console.error('❌ Database setup failed:', error);
-    process.exit(1);
+    console.error('❌ Database setup failed:', error)
+    process.exit(1)
   } finally {
-    await pool.end();
+    await pool.end()
   }
 }
 
-setupDatabase();
+setupDatabase()

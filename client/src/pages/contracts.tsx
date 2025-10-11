@@ -1,37 +1,41 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { ContractTable } from "@/components/contract-table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { ContractTable } from '@/components/contract-table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Upload, Filter, X } from "lucide-react";
-import { getContracts } from "@/lib/api";
-import type { Contract as UIContract } from "@/components/contract-table";
-import { useLocation } from "wouter";
+} from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Search, Upload, Filter, X } from 'lucide-react'
+import { getContracts } from '@/lib/api'
+import type { Contract as UIContract } from '@/components/contract-table'
+import { useLocation } from 'wouter'
 
 export default function Contracts() {
-  const [, setLocation] = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [riskFilter, setRiskFilter] = useState("all");
-  const [selectedContracts, setSelectedContracts] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<"title" | "date" | "value">("date");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  
-  const { data: contracts = [], isLoading, error } = useQuery({
-    queryKey: ["/api/contracts"],
+  const [, setLocation] = useLocation()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [riskFilter, setRiskFilter] = useState('all')
+  const [selectedContracts, setSelectedContracts] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState<'title' | 'date' | 'value'>('date')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+
+  const {
+    data: contracts = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['/api/contracts'],
     queryFn: getContracts,
     retry: 1,
-  });
+  })
 
   if (error) {
     return (
@@ -39,89 +43,114 @@ export default function Contracts() {
         <p className="text-red-600 mb-4">Failed to load contracts</p>
         <Button onClick={() => window.location.reload()}>Retry</Button>
       </div>
-    );
+    )
   }
 
   // Ensure status values conform to the UI Contract['status'] union
-  function normalizeStatus(s: unknown): UIContract["status"] {
-    if (s === "active" || s === "expiring" || s === "expired" || s === "draft") {
-      return s as UIContract["status"];
+  function normalizeStatus(s: unknown): UIContract['status'] {
+    if (
+      s === 'active' ||
+      s === 'expiring' ||
+      s === 'expired' ||
+      s === 'draft'
+    ) {
+      return s as UIContract['status']
     }
-    return "draft";
+    return 'draft'
   }
 
   const contractTypes = useMemo(() => {
-    const types = new Set(contracts.map(c => c.contractType).filter(Boolean));
-    return Array.from(types);
-  }, [contracts]);
+    const types = new Set(contracts.map((c) => c.contractType).filter(Boolean))
+    return Array.from(types)
+  }, [contracts])
 
   const filteredContracts = useMemo(() => {
     let filtered = contracts.filter((contract) => {
-      const matchesSearch = searchQuery === "" || 
-        (contract.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-        (contract.counterparty?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-        (contract.contractType?.toLowerCase() || '').includes(searchQuery.toLowerCase());
-      
-      const matchesStatus = statusFilter === "all" || contract.status === statusFilter;
-      const matchesType = typeFilter === "all" || contract.contractType === typeFilter;
-      const matchesRisk = riskFilter === "all" || contract.riskLevel === riskFilter;
-      
-      return matchesSearch && matchesStatus && matchesType && matchesRisk;
-    });
+      const matchesSearch =
+        searchQuery === '' ||
+        (contract.title?.toLowerCase() || '').includes(
+          searchQuery.toLowerCase()
+        ) ||
+        (contract.counterparty?.toLowerCase() || '').includes(
+          searchQuery.toLowerCase()
+        ) ||
+        (contract.contractType?.toLowerCase() || '').includes(
+          searchQuery.toLowerCase()
+        )
+
+      const matchesStatus =
+        statusFilter === 'all' || contract.status === statusFilter
+      const matchesType =
+        typeFilter === 'all' || contract.contractType === typeFilter
+      const matchesRisk =
+        riskFilter === 'all' || contract.riskLevel === riskFilter
+
+      return matchesSearch && matchesStatus && matchesType && matchesRisk
+    })
 
     filtered.sort((a, b) => {
-      let aVal, bVal;
+      let aVal, bVal
       switch (sortBy) {
-        case "title":
-          aVal = a.title?.toLowerCase() || "";
-          bVal = b.title?.toLowerCase() || "";
-          break;
-        case "value":
-          aVal = parseFloat(a.value?.replace(/[^\d.-]/g, "") || "0");
-          bVal = parseFloat(b.value?.replace(/[^\d.-]/g, "") || "0");
-          break;
-        case "date":
+        case 'title':
+          aVal = a.title?.toLowerCase() || ''
+          bVal = b.title?.toLowerCase() || ''
+          break
+        case 'value':
+          aVal = parseFloat(a.value?.replace(/[^\d.-]/g, '') || '0')
+          bVal = parseFloat(b.value?.replace(/[^\d.-]/g, '') || '0')
+          break
+        case 'date':
         default:
-          aVal = new Date(a.createdAt || 0).getTime();
-          bVal = new Date(b.createdAt || 0).getTime();
+          aVal = new Date(a.createdAt || 0).getTime()
+          bVal = new Date(b.createdAt || 0).getTime()
       }
-      
-      if (sortOrder === "asc") {
-        return aVal > bVal ? 1 : -1;
+
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1
       } else {
-        return aVal < bVal ? 1 : -1;
+        return aVal < bVal ? 1 : -1
       }
-    });
+    })
 
     return filtered.map((contract) => ({
       ...contract,
-      type: contract.contractType || "N/A",
+      type: contract.contractType || 'N/A',
       status: normalizeStatus((contract as any).status),
-    })) as UIContract[];
-  }, [contracts, searchQuery, statusFilter, typeFilter, riskFilter, sortBy, sortOrder]);
+    })) as UIContract[]
+  }, [
+    contracts,
+    searchQuery,
+    statusFilter,
+    typeFilter,
+    riskFilter,
+    sortBy,
+    sortOrder,
+  ])
 
   const handleBulkDelete = async () => {
-    if (selectedContracts.length === 0) return;
-    console.log("Bulk delete:", selectedContracts);
-    setSelectedContracts([]);
-  };
+    if (selectedContracts.length === 0) return
+    console.log('Bulk delete:', selectedContracts)
+    setSelectedContracts([])
+  }
 
   const handleSelectAll = () => {
     if (selectedContracts.length === filteredContracts.length) {
-      setSelectedContracts([]);
+      setSelectedContracts([])
     } else {
-      setSelectedContracts(filteredContracts.map(c => c.id));
+      setSelectedContracts(filteredContracts.map((c) => c.id))
     }
-  };
+  }
 
   const clearFilters = () => {
-    setSearchQuery("");
-    setStatusFilter("all");
-    setTypeFilter("all");
-    setRiskFilter("all");
-  };
+    setSearchQuery('')
+    setStatusFilter('all')
+    setTypeFilter('all')
+    setRiskFilter('all')
+  }
 
-  const activeFiltersCount = [statusFilter, typeFilter, riskFilter].filter(f => f !== "all").length;
+  const activeFiltersCount = [statusFilter, typeFilter, riskFilter].filter(
+    (f) => f !== 'all'
+  ).length
 
   return (
     <div className="space-y-6">
@@ -132,7 +161,10 @@ export default function Contracts() {
             Centralized storage and management of all contracts
           </p>
         </div>
-        <Button onClick={() => setLocation("/upload")} data-testid="button-upload-contract">
+        <Button
+          onClick={() => setLocation('/upload')}
+          data-testid="button-upload-contract"
+        >
           <Upload className="h-4 w-4 mr-2" />
           Upload Contract
         </Button>
@@ -150,7 +182,7 @@ export default function Contracts() {
               data-testid="input-search"
             />
           </div>
-          
+
           <div className="flex gap-2">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-32">
@@ -171,8 +203,10 @@ export default function Contracts() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                {contractTypes.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                {contractTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -189,11 +223,14 @@ export default function Contracts() {
               </SelectContent>
             </Select>
 
-            <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
-              const [field, order] = value.split('-');
-              setSortBy(field as typeof sortBy);
-              setSortOrder(order as typeof sortOrder);
-            }}>
+            <Select
+              value={`${sortBy}-${sortOrder}`}
+              onValueChange={(value) => {
+                const [field, order] = value.split('-')
+                setSortBy(field as typeof sortBy)
+                setSortOrder(order as typeof sortOrder)
+              }}
+            >
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
@@ -211,29 +248,43 @@ export default function Contracts() {
 
         {(activeFiltersCount > 0 || searchQuery) && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Active filters:</span>
+            <span className="text-sm text-muted-foreground">
+              Active filters:
+            </span>
             {searchQuery && (
               <Badge variant="secondary" className="gap-1">
                 Search: {searchQuery}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => setSearchQuery("")} />
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => setSearchQuery('')}
+                />
               </Badge>
             )}
-            {statusFilter !== "all" && (
+            {statusFilter !== 'all' && (
               <Badge variant="secondary" className="gap-1">
                 Status: {statusFilter}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => setStatusFilter("all")} />
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => setStatusFilter('all')}
+                />
               </Badge>
             )}
-            {typeFilter !== "all" && (
+            {typeFilter !== 'all' && (
               <Badge variant="secondary" className="gap-1">
                 Type: {typeFilter}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => setTypeFilter("all")} />
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => setTypeFilter('all')}
+                />
               </Badge>
             )}
-            {riskFilter !== "all" && (
+            {riskFilter !== 'all' && (
               <Badge variant="secondary" className="gap-1">
                 Risk: {riskFilter}
-                <X className="h-3 w-3 cursor-pointer" onClick={() => setRiskFilter("all")} />
+                <X
+                  className="h-3 w-3 cursor-pointer"
+                  onClick={() => setRiskFilter('all')}
+                />
               </Badge>
             )}
             <Button variant="ghost" size="sm" onClick={clearFilters}>
@@ -248,7 +299,11 @@ export default function Contracts() {
               {selectedContracts.length} contract(s) selected
             </span>
             <div className="flex gap-2">
-              <Button size="sm" variant="destructive" onClick={handleBulkDelete}>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={handleBulkDelete}
+              >
                 Delete Selected
               </Button>
               <Button size="sm" variant="outline">
@@ -260,11 +315,18 @@ export default function Contracts() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-8 text-muted-foreground">Loading contracts...</div>
+        <div className="text-center py-8 text-muted-foreground">
+          Loading contracts...
+        </div>
       ) : filteredContracts.length === 0 && contracts.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">No contracts yet. Upload your first contract to get started!</p>
-          <Button onClick={() => setLocation("/upload")} data-testid="button-upload-first">
+          <p className="text-muted-foreground mb-4">
+            No contracts yet. Upload your first contract to get started!
+          </p>
+          <Button
+            onClick={() => setLocation('/upload')}
+            data-testid="button-upload-first"
+          >
             <Upload className="h-4 w-4 mr-2" />
             Upload First Contract
           </Button>
@@ -277,19 +339,24 @@ export default function Contracts() {
         <>
           <div className="flex items-center gap-2 mb-4">
             <Checkbox
-              checked={selectedContracts.length === filteredContracts.length && filteredContracts.length > 0}
+              checked={
+                selectedContracts.length === filteredContracts.length &&
+                filteredContracts.length > 0
+              }
               onCheckedChange={handleSelectAll}
             />
             <span className="text-sm text-muted-foreground">
               Select all ({filteredContracts.length})
             </span>
           </div>
-          
+
           <ContractTable
             contracts={filteredContracts}
             selectedContracts={selectedContracts}
             onSelectionChange={setSelectedContracts}
-            onRowClick={(contract) => console.log("Navigate to contract:", contract.id)}
+            onRowClick={(contract) =>
+              console.log('Navigate to contract:', contract.id)
+            }
           />
 
           <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -297,10 +364,20 @@ export default function Contracts() {
               Showing {filteredContracts.length} of {contracts.length} contracts
             </p>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled data-testid="button-prev">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                data-testid="button-prev"
+              >
                 Previous
               </Button>
-              <Button variant="outline" size="sm" disabled data-testid="button-next">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                data-testid="button-next"
+              >
                 Next
               </Button>
             </div>
@@ -308,5 +385,5 @@ export default function Contracts() {
         </>
       )}
     </div>
-  );
+  )
 }

@@ -6,8 +6,8 @@ import {
   Settings,
   Shield,
   AlertTriangle,
-} from "lucide-react";
-import { Link, useLocation } from "wouter";
+} from 'lucide-react'
+import { Link, useLocation } from 'wouter'
 import {
   Sidebar,
   SidebarContent,
@@ -18,57 +18,65 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar'
 
 const menuItems = [
   {
-    title: "Dashboard",
-    url: "/",
+    title: 'Dashboard',
+    url: '/',
     icon: LayoutDashboard,
-    testId: "link-dashboard",
+    testId: 'link-dashboard',
   },
   {
-    title: "Contracts",
-    url: "/contracts",
+    title: 'Contracts',
+    url: '/contracts',
     icon: FileText,
-    testId: "link-contracts",
+    testId: 'link-contracts',
   },
   {
-    title: "AI Drafting",
-    url: "/ai-drafting",
+    title: 'AI Drafting',
+    url: '/ai-drafting',
     icon: Sparkles,
-    testId: "link-ai-drafting",
+    testId: 'link-ai-drafting',
   },
   {
-    title: "Analytics",
-    url: "/analytics",
+    title: 'Analytics',
+    url: '/analytics',
     icon: BarChart3,
-    testId: "link-analytics",
+    testId: 'link-analytics',
   },
   {
-    title: "Risk Monitor",
-    url: "/risk",
+    title: 'Risk Monitor',
+    url: '/risk',
     icon: AlertTriangle,
-    testId: "link-risk",
+    testId: 'link-risk',
   },
-];
+]
 
 const settingsItems = [
   {
-    title: "Compliance",
-    url: "/compliance",
+    title: 'Compliance',
+    url: '/compliance',
     icon: Shield,
-    testId: "link-compliance",
+    testId: 'link-compliance',
   },
   {
-    title: "Settings",
-    url: "/settings",
+    title: 'Settings',
+    url: '/settings',
     icon: Settings,
-    testId: "link-settings",
+    testId: 'link-settings',
   },
-];
+]
 
-function MenuGroup({ label, items, location }: { label: string; items: typeof menuItems; location: string }) {
+function MenuGroup({
+  label,
+  items,
+  location,
+}: {
+  label: string
+  items: typeof menuItems
+  location: string
+}) {
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
@@ -87,11 +95,11 @@ function MenuGroup({ label, items, location }: { label: string; items: typeof me
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
-  );
+  )
 }
 
 export function AppSidebar() {
-  const [location] = useLocation();
+  const [location] = useLocation()
 
   return (
     <Sidebar>
@@ -108,5 +116,5 @@ export function AppSidebar() {
         <MenuGroup label="System" items={settingsItems} location={location} />
       </SidebarContent>
     </Sidebar>
-  );
+  )
 }

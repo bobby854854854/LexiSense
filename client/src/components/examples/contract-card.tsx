@@ -1,4 +1,4 @@
-import { ContractCard } from "../contract-card";
+import { ContractCard } from '../contract-card'
 
 export default function ContractCardExample() {
   return (
@@ -11,8 +11,8 @@ export default function ContractCardExample() {
         value="$250,000"
         expiryDate="Dec 31, 2025"
         riskLevel="low"
-        onClick={() => console.log("Contract clicked")}
+        onClick={() => console.log('Contract clicked')}
       />
     </div>
-  );
+  )
 }

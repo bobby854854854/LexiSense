@@ -1,40 +1,40 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { FileText, MoreVertical } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { FileText, MoreVertical } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu'
 
 interface ContractCardProps {
-  id: string;
-  title: string;
-  counterparty: string;
-  status: "active" | "expiring" | "expired" | "draft";
-  value: string;
-  expiryDate: string;
-  riskLevel?: "low" | "medium" | "high";
-  onClick?: () => void;
+  id: string
+  title: string
+  counterparty: string
+  status: 'active' | 'expiring' | 'expired' | 'draft'
+  value: string
+  expiryDate: string
+  riskLevel?: 'low' | 'medium' | 'high'
+  onClick?: () => void
 }
 
-const getColorClasses = (color: string) => 
-  `bg-${color}-500/10 text-${color}-700 dark:text-${color}-400 border-${color}-500/20`;
+const getColorClasses = (color: string) =>
+  `bg-${color}-500/10 text-${color}-700 dark:text-${color}-400 border-${color}-500/20`
 
 const statusColors = {
   active: getColorClasses('green'),
   expiring: getColorClasses('yellow'),
   expired: getColorClasses('red'),
   draft: getColorClasses('blue'),
-};
+}
 
 const riskColors = {
   low: getColorClasses('green'),
   medium: getColorClasses('yellow'),
   high: getColorClasses('red'),
-};
+}
 
 export function ContractCard({
   id,
@@ -90,11 +90,17 @@ export function ContractCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <Badge className={statusColors[status] || getColorClasses('gray')} data-testid={`badge-status-${id}`}>
+          <Badge
+            className={statusColors[status] || getColorClasses('gray')}
+            data-testid={`badge-status-${id}`}
+          >
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </Badge>
           {riskLevel && (
-            <Badge className={riskColors[riskLevel] || getColorClasses('gray')} data-testid={`badge-risk-${id}`}>
+            <Badge
+              className={riskColors[riskLevel] || getColorClasses('gray')}
+              data-testid={`badge-risk-${id}`}
+            >
               {riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1)} Risk
             </Badge>
           )}
@@ -115,5 +121,5 @@ export function ContractCard({
         </div>
       </CardContent>
     </Card>
-  );
+  )
 }

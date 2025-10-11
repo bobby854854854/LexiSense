@@ -1,4 +1,4 @@
-import { RiskIndicator } from "../risk-indicator";
+import { RiskIndicator } from '../risk-indicator'
 
 export default function RiskIndicatorExample() {
   return (
@@ -18,5 +18,5 @@ export default function RiskIndicatorExample() {
         testId="card-risk-medium"
       />
     </div>
-  );
+  )
 }

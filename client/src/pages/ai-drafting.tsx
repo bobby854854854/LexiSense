@@ -1,53 +1,53 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Download, Send, Loader2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { draftContract } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
+} from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Sparkles, Download, Send, Loader2 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { draftContract } from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
 
 export default function AIDrafting() {
-  const { toast } = useToast();
-  const [contractType, setContractType] = useState("");
-  const [party1, setParty1] = useState("");
-  const [party2, setParty2] = useState("");
-  const [value, setValue] = useState("");
-  const [terms, setTerms] = useState("");
-  const [generatedText, setGeneratedText] = useState("");
+  const { toast } = useToast()
+  const [contractType, setContractType] = useState('')
+  const [party1, setParty1] = useState('')
+  const [party2, setParty2] = useState('')
+  const [value, setValue] = useState('')
+  const [terms, setTerms] = useState('')
+  const [generatedText, setGeneratedText] = useState('')
 
   const draftMutation = useMutation({
     mutationFn: draftContract,
     onSuccess: (data) => {
-      setGeneratedText(data.contract);
+      setGeneratedText(data.contract)
     },
     onError: () => {
       toast({
-        title: "Generation Failed",
-        description: "Failed to generate contract. Please try again.",
-        variant: "destructive",
-      });
+        title: 'Generation Failed',
+        description: 'Failed to generate contract. Please try again.',
+        variant: 'destructive',
+      })
     },
-  });
+  })
 
   const handleGenerate = () => {
     if (!contractType || !party1 || !party2) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in contract type and both parties.",
-        variant: "destructive",
-      });
-      return;
+        title: 'Missing Information',
+        description: 'Please fill in contract type and both parties.',
+        variant: 'destructive',
+      })
+      return
     }
 
     draftMutation.mutate({
@@ -56,8 +56,8 @@ export default function AIDrafting() {
       party2,
       value,
       terms,
-    });
-  };
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -83,15 +83,24 @@ export default function AIDrafting() {
             <div className="space-y-2">
               <Label htmlFor="contract-type">Contract Type</Label>
               <Select value={contractType} onValueChange={setContractType}>
-                <SelectTrigger id="contract-type" data-testid="select-contract-type">
+                <SelectTrigger
+                  id="contract-type"
+                  data-testid="select-contract-type"
+                >
                   <SelectValue placeholder="Select contract type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="msa">Master Service Agreement</SelectItem>
                   <SelectItem value="nda">Non-Disclosure Agreement</SelectItem>
-                  <SelectItem value="sla">Software License Agreement</SelectItem>
-                  <SelectItem value="consulting">Consulting Agreement</SelectItem>
-                  <SelectItem value="employment">Employment Contract</SelectItem>
+                  <SelectItem value="sla">
+                    Software License Agreement
+                  </SelectItem>
+                  <SelectItem value="consulting">
+                    Consulting Agreement
+                  </SelectItem>
+                  <SelectItem value="employment">
+                    Employment Contract
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -179,7 +188,11 @@ export default function AIDrafting() {
                     <Download className="h-4 w-4 mr-2" />
                     Download PDF
                   </Button>
-                  <Button variant="outline" className="flex-1" data-testid="button-send">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    data-testid="button-send"
+                  >
                     <Send className="h-4 w-4 mr-2" />
                     Send for Review
                   </Button>
@@ -204,5 +217,5 @@ export default function AIDrafting() {
         </Card>
       </div>
     </div>
-  );
+  )
 }

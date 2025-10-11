@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config';
-import path from 'path';
+import { defineConfig } from 'vitest/config'
+import path from 'path'
 
 export default defineConfig({
   resolve: {
@@ -12,7 +12,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     coverage: {
-      reporter: ['text']
-    }
-  }
-});
+      reporter: ['text'],
+    },
+  },
+})

@@ -4,28 +4,28 @@ export class APIError extends Error {
     public status?: number,
     public details?: any
   ) {
-    super(message);
-    this.name = 'APIError';
+    super(message)
+    this.name = 'APIError'
   }
 }
 
 export async function handleAPIResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-    let errorDetails;
-    
+    let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+    let errorDetails
+
     try {
-      const errorData = await response.json();
-      errorMessage = errorData.error || errorMessage;
-      errorDetails = errorData.details;
+      const errorData = await response.json()
+      errorMessage = errorData.error || errorMessage
+      errorDetails = errorData.details
     } catch {
       // If response is not JSON, use status text
     }
-    
-    throw new APIError(errorMessage, response.status, errorDetails);
+
+    throw new APIError(errorMessage, response.status, errorDetails)
   }
-  
-  return response.json();
+
+  return response.json()
 }
 
 export function logError(error: Error, context?: string) {
@@ -34,10 +34,10 @@ export function logError(error: Error, context?: string) {
     stack: error.stack,
     context,
     timestamp: new Date().toISOString(),
-  };
-  
-  console.error('Application Error:', errorInfo);
-  
+  }
+
+  console.error('Application Error:', errorInfo)
+
   // In production, you might want to send this to an error tracking service
   if (process.env.NODE_ENV === 'production') {
     // Example: sendToErrorTrackingService(errorInfo);

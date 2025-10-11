@@ -1,13 +1,13 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LucideIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { LucideIcon } from 'lucide-react'
 
 interface StatCardProps {
-  title: string;
-  value: string;
-  icon: LucideIcon;
-  trend?: string;
-  trendDirection?: "up" | "down";
-  testId?: string;
+  title: string
+  value: string
+  icon: LucideIcon
+  trend?: string
+  trendDirection?: 'up' | 'down'
+  testId?: string
 }
 
 export function StatCard({
@@ -27,15 +27,18 @@ export function StatCard({
         <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold" data-testid={testId ? `${testId}-value` : undefined}>
+        <div
+          className="text-2xl font-bold"
+          data-testid={testId ? `${testId}-value` : undefined}
+        >
           {value}
         </div>
         {trend && (
           <p
             className={`text-xs ${
-              trendDirection === "up"
-                ? "text-green-600 dark:text-green-400"
-                : "text-red-600 dark:text-red-400"
+              trendDirection === 'up'
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-red-600 dark:text-red-400'
             }`}
             data-testid={testId ? `${testId}-trend` : undefined}
           >
@@ -44,5 +47,5 @@ export function StatCard({
         )}
       </CardContent>
     </Card>
-  );
+  )
 }

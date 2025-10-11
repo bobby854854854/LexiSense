@@ -1,24 +1,24 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
-import Contracts from "@/pages/contracts";
-import ContractUpload from "@/pages/contract-upload";
-import AIDrafting from "@/pages/ai-drafting";
-import Analytics from "@/pages/analytics";
-import ContractDetail from "@/pages/contract-detail";
+import { Switch, Route } from 'wouter'
+import { queryClient } from './lib/queryClient'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from '@/components/ui/toaster'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { AppSidebar } from '@/components/app-sidebar'
+import { ThemeProvider } from '@/components/theme-provider'
+import { ThemeToggle } from '@/components/theme-toggle'
+import NotFound from '@/pages/not-found'
+import Dashboard from '@/pages/dashboard'
+import Contracts from '@/pages/contracts'
+import ContractUpload from '@/pages/contract-upload'
+import AIDrafting from '@/pages/ai-drafting'
+import Analytics from '@/pages/analytics'
+import ContractDetail from '@/pages/ContractDetail'
 
 const sidebarStyle = {
-  "--sidebar-width": "16rem",
-  "--sidebar-width-icon": "3rem",
-} as React.CSSProperties;
+  '--sidebar-width': '16rem',
+  '--sidebar-width-icon': '3rem',
+} as React.CSSProperties
 
 function Router() {
   return (
@@ -31,11 +31,10 @@ function Router() {
       <Route path="/analytics" component={Analytics} />
       <Route component={NotFound} />
     </Switch>
-  );
+  )
 }
 
 export default function App() {
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
@@ -60,5 +59,5 @@ export default function App() {
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
-  );
+  )
 }

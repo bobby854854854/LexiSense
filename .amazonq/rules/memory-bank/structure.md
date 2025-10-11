@@ -3,6 +3,7 @@
 ## Directory Organization
 
 ### Root Level
+
 ```
 LexiSense/
 ├── client/          # React frontend application
@@ -17,9 +18,11 @@ LexiSense/
 ## Core Components
 
 ### Client (`/client`)
+
 React-based single-page application with TypeScript.
 
 **Structure:**
+
 - `src/components/` - Reusable UI components
   - `ui/` - shadcn/ui component library (50+ components)
   - `examples/` - Example implementations of complex components
@@ -44,9 +47,11 @@ React-based single-page application with TypeScript.
 - `index.html` - HTML template
 
 ### Server (`/server`)
+
 Express.js REST API with TypeScript.
 
 **Structure:**
+
 - `index.ts` - Server entry point, middleware setup, Express configuration
 - `routes.ts` - API endpoint definitions and request handlers
 - `security.ts` - Security middleware (rate limiting, validation, sanitization)
@@ -57,20 +62,25 @@ Express.js REST API with TypeScript.
 - `vite.ts` - Vite integration for development mode
 
 ### Shared (`/shared`)
+
 Common code shared between client and server.
 
 **Structure:**
+
 - `schema.ts` - Zod schemas for data validation and TypeScript types
 
 ### Tests (`/tests`)
+
 Test suites using Vitest and Supertest.
 
 **Structure:**
+
 - `server.routes.test.ts` - API endpoint integration tests
 
 ## Architectural Patterns
 
 ### Frontend Architecture
+
 - **Component-Based**: Modular React components with clear separation of concerns
 - **Composition Pattern**: shadcn/ui components composed for complex UIs
 - **Custom Hooks**: Reusable logic extraction (toast, mobile detection)
@@ -79,6 +89,7 @@ Test suites using Vitest and Supertest.
 - **Error Boundaries**: React Error Boundary for graceful error handling
 
 ### Backend Architecture
+
 - **RESTful API**: Express.js with standard HTTP methods
 - **Layered Architecture**:
   - Routes layer (endpoint definitions)
@@ -89,6 +100,7 @@ Test suites using Vitest and Supertest.
 - **Session Management**: express-session with PostgreSQL store
 
 ### Data Flow
+
 1. **Client Request** → API client (`lib/api.ts`) → TanStack Query
 2. **Server Receives** → Security middleware → Route handler
 3. **Validation** → Zod schemas validate input
@@ -97,6 +109,7 @@ Test suites using Vitest and Supertest.
 6. **Client Updates** → React Query cache → UI re-render
 
 ### Database Architecture
+
 - **ORM**: Drizzle ORM for type-safe database queries
 - **Schema Definition**: `shared/schema.ts` defines data models
 - **Migration**: drizzle-kit for schema migrations
@@ -105,16 +118,19 @@ Test suites using Vitest and Supertest.
 ## Key Relationships
 
 ### Component Dependencies
+
 - Pages depend on components and hooks
 - Components depend on ui components and lib utilities
 - All client code depends on shared schemas for type safety
 
 ### API Integration
+
 - Client `api.ts` provides typed API methods
 - Server `routes.ts` implements corresponding endpoints
 - Shared `schema.ts` ensures type consistency
 
 ### Security Flow
+
 - All requests pass through `security.ts` middleware
 - Rate limiting applied per IP address
 - Input sanitization via DOMPurify
@@ -123,22 +139,27 @@ Test suites using Vitest and Supertest.
 ## Configuration Files
 
 ### Build & Development
+
 - `vite.config.ts` - Vite bundler configuration
 - `tsconfig.json` - TypeScript compiler options
 - `package.json` - Dependencies and scripts
 - `drizzle.config.ts` - Database ORM configuration
 
 ### Styling
+
 - `tailwind.config.ts` - Tailwind CSS configuration
 - `postcss.config.js` - PostCSS plugins
 - `components.json` - shadcn/ui component configuration
 - `index.css` - Global styles and Tailwind imports
 
 ### Testing
+
 - `vitest.config.ts` - Vitest test runner configuration
 
 ### CI/CD
+
 - `.github/workflows/ci.yml` - GitHub Actions workflow
 
 ### Design
+
 - `design_guidelines.md` - Comprehensive UI/UX design system documentation
