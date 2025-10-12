@@ -16,8 +16,12 @@ async function fetchContract(id: string) {
 
 export default function ContractDetail() {
   const { id } = useParams()
-  
-  const { data: contract, isLoading, error } = useQuery({
+
+  const {
+    data: contract,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['contract', id],
     queryFn: () => fetchContract(id!),
     enabled: !!id,
@@ -33,10 +37,14 @@ export default function ContractDetail() {
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case 'high': return 'destructive'
-      case 'medium': return 'default'
-      case 'low': return 'secondary'
-      default: return 'secondary'
+      case 'high':
+        return 'destructive'
+      case 'medium':
+        return 'default'
+      case 'low':
+        return 'secondary'
+      default:
+        return 'secondary'
     }
   }
 
@@ -62,7 +70,11 @@ export default function ContractDetail() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <Badge variant={contract.status === 'active' ? 'default' : 'secondary'}>
+                <Badge
+                  variant={
+                    contract.status === 'active' ? 'default' : 'secondary'
+                  }
+                >
                   {contract.status}
                 </Badge>
                 <Badge variant={getRiskColor(contract.riskLevel)}>
@@ -80,13 +92,17 @@ export default function ContractDetail() {
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Effective:</span>
+                <span className="text-sm text-muted-foreground">
+                  Effective:
+                </span>
                 <span className="font-medium">{contract.effectiveDate}</span>
               </div>
               {contract.expiryDate && (
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Expires:</span>
+                  <span className="text-sm text-muted-foreground">
+                    Expires:
+                  </span>
                   <span className="font-medium">{contract.expiryDate}</span>
                 </div>
               )}
@@ -113,8 +129,8 @@ export default function ContractDetail() {
                           {insight.content}
                         </p>
                         {insight.severity && (
-                          <Badge 
-                            variant={getRiskColor(insight.severity)} 
+                          <Badge
+                            variant={getRiskColor(insight.severity)}
                             className="mt-2"
                           >
                             {insight.severity}

@@ -1,7 +1,11 @@
 import type { Express } from 'express'
 import { createServer, type Server } from 'http'
 import { storage } from './storage.ts'
-import { insertContractSchema, updateContractSchema, type AIInsight } from '@shared/schema'
+import {
+  insertContractSchema,
+  updateContractSchema,
+  type AIInsight,
+} from '@shared/schema'
 import OpenAI from 'openai'
 import {
   contractAnalysisSchema,
@@ -212,7 +216,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = updateContractSchema.parse(req.body)
       const sanitizedData = sanitizeObject(validatedData)
-      const contract = await storage.updateContract(req.params.id, sanitizedData)
+      const contract = await storage.updateContract(
+        req.params.id,
+        sanitizedData
+      )
       if (!contract) {
         return res.status(404).json({ error: 'Contract not found' })
       }

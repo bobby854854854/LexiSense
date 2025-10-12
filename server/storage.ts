@@ -93,7 +93,7 @@ let initPromise: Promise<void> | null = null
 
 async function initStorage(): Promise<IStorage> {
   if (storageImpl) return storageImpl
-  
+
   if (!initPromise) {
     initPromise = (async () => {
       try {
@@ -109,7 +109,7 @@ async function initStorage(): Promise<IStorage> {
       }
     })()
   }
-  
+
   await initPromise
   return storageImpl!
 }

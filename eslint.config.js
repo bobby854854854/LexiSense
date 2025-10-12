@@ -1,15 +1,15 @@
-import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import reactPlugin from 'eslint-plugin-react';
-import hooksPlugin from 'eslint-plugin-react-hooks';
-import prettierConfig from 'eslint-config-prettier';
-import prettierPlugin from 'eslint-plugin-prettier';
-import globals from 'globals';
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import reactPlugin from 'eslint-plugin-react'
+import hooksPlugin from 'eslint-plugin-react-hooks'
+import prettierConfig from 'eslint-config-prettier'
+import prettierPlugin from 'eslint-plugin-prettier'
+import globals from 'globals'
 
 export default [
   // Global ignores
   {
-    ignores: ["dist/", "node_modules/", "shellcheck.net/"],
+    ignores: ['dist/', 'node_modules/', 'shellcheck.net/'],
   },
 
   // Base configs
@@ -18,7 +18,7 @@ export default [
 
   // React config
   {
-    files: ["**/*.{js,jsx,ts,tsx}"],
+    files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
       react: reactPlugin,
     },
@@ -30,23 +30,23 @@ export default [
     },
     rules: {
       ...reactPlugin.configs.recommended.rules,
-      "react/react-in-jsx-scope": "off",
+      'react/react-in-jsx-scope': 'off',
     },
     settings: {
       react: {
-        version: "detect",
+        version: 'detect',
       },
     },
   },
 
   // React Hooks config
   {
-    files: ["**/*.{js,jsx,ts,tsx}"],
+    files: ['**/*.{js,jsx,ts,tsx}'],
     plugins: {
-      "react-hooks": hooksPlugin,
+      'react-hooks': hooksPlugin,
     },
     rules: {
-        ...hooksPlugin.configs.recommended.rules,
+      ...hooksPlugin.configs.recommended.rules,
     },
   },
 
@@ -57,7 +57,7 @@ export default [
       prettier: prettierPlugin,
     },
     rules: {
-      "prettier/prettier": "error",
+      'prettier/prettier': 'error',
     },
-  }
-];
+  },
+]

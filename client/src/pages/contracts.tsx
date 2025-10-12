@@ -65,7 +65,7 @@ export default function Contracts() {
   }, [contracts])
 
   const filteredContracts = useMemo(() => {
-    let filtered = contracts.filter((contract) => {
+    const filtered = contracts.filter((contract) => {
       const matchesSearch =
         searchQuery === '' ||
         (contract.title?.toLowerCase() || '').includes(
