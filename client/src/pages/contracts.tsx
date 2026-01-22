@@ -1,5 +1,4 @@
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useMemo, useEffect } from 'react'
 import { ContractTable } from '@/components/contract-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +15,7 @@ import { Search, Upload, Filter, X } from 'lucide-react'
 import { getContracts } from '@/lib/api'
 import type { Contract as UIContract } from '@/components/contract-table'
 import { useLocation } from 'wouter'
+import type { Contract } from '@shared/schema'
 
 export default function Contracts() {
   const [, setLocation] = useLocation()
@@ -27,15 +27,22 @@ export default function Contracts() {
   const [sortBy, setSortBy] = useState<'title' | 'date' | 'value'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
-  const {
-    data: contracts = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['/api/contracts'],
-    queryFn: getContracts,
-    retry: 1,
-  })
+  const [contracts, setContracts] = useState<Contract[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  useEffect(() => {
+    getContracts()
+      .then(data => {
+        setContracts(data)
+        setIsLoading(false)
+      })
+      .catch(error => {
+        console.error("Failed to fetch contracts:", error)
+        setError(error)
+        setIsLoading(false)
+      })
+  }, [])
 
   if (error) {
     return (
@@ -60,7 +67,7 @@ export default function Contracts() {
   }
 
   const contractTypes = useMemo(() => {
-    const types = new Set(contracts.map((c) => c.contractType).filter(Boolean))
+    const types = new Set(contracts.map((c) => c.contractType).filter(Boolean) as string[])
     return Array.from(types)
   }, [contracts])
 
@@ -354,7 +361,7 @@ export default function Contracts() {
             contracts={filteredContracts}
             selectedContracts={selectedContracts}
             onSelectionChange={setSelectedContracts}
-            onRowClick={(contract) =>
+            onRowClick={(contract: UIContract) =>
               console.log('Navigate to contract:', contract.id)
             }
           />

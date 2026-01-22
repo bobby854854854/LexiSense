@@ -1,0 +1,1 @@
+export const ContractDetailPage = ({ id }: { id: string }) => <div>Contract Detail Page {id}</div>;

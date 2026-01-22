@@ -1,150 +1,80 @@
-import {
-  type User,
-  type InsertUser,
-  type Contract,
-  type InsertContract,
-} from '@shared/schema'
-import { eq, desc } from 'drizzle-orm'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { v4 as uuidv4 } from 'uuid'
+import pdf from 'pdf-parse'
 
-export interface IStorage {
-  getUser(id: string): Promise<User | undefined>
-  getUserByUsername(username: string): Promise<User | undefined>
-  createUser(user: InsertUser): Promise<User>
+// This is a mock S3 client. In a real production environment,
+// you would configure this with actual AWS credentials and region.
+const s3Client = new S3Client({
+  region: 'us-east-1',
+  endpoint: 'http://localhost:9000', // Using a localstack/minio endpoint for dev
+  credentials: {
+    accessKeyId: 'S3RVER',
+    secretAccessKey: 'S3RVER',
+  },
+  forcePathStyle: true,
+})
 
-  getAllContracts(): Promise<Contract[]>
-  getContract(id: string): Promise<Contract | undefined>
-  createContract(contract: InsertContract): Promise<Contract>
-  updateContract(
-    id: string,
-    contract: Partial<InsertContract>
-  ): Promise<Contract | undefined>
-  deleteContract(id: string): Promise<boolean>
+const BUCKET_NAME = 'lexisense-contracts'
+
+/**
+ * Extracts text content from a file buffer based on its MIME type.
+ * @param fileBuffer The raw file buffer.
+ * @param mimeType The MIME type of the file (e.g., 'application/pdf', 'text/plain').
+ * @returns A promise that resolves to the extracted text content.
+ */
+async function extractTextFromFile(
+  fileBuffer: Buffer,
+  mimeType: string,
+): Promise<string> {
+  if (mimeType === 'application/pdf') {
+    const data = await pdf(fileBuffer)
+    return data.text
+  } else if (mimeType === 'text/plain') {
+    return fileBuffer.toString('utf-8')
+  }
+  // Future: Add support for .docx, .rtf etc.
+  throw new Error(`Unsupported file type: ${mimeType}`)
 }
 
-export class InMemoryStorage implements IStorage {
-  private users: User[] = []
-  private contracts: Contract[] = []
+/**
+ * Uploads a file to the mock S3 storage and extracts its text content.
+ * @param fileBuffer The raw file buffer of the file.
+ * @param originalName The original name of the file.
+ * @param organizationId The ID of the organization the file belongs to.
+ * @returns A promise that resolves to an object containing the storageKey and the extracted textContent.
+ */
+export async function uploadFileToStorage(
+  fileBuffer: Buffer,
+  originalName: string,
+  mimeType: string,
+  organizationId: string,
+): Promise<{ storageKey: string; textContent: string }> {
+  console.log('[Storage] Starting file upload and text extraction...')
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.find((u) => u.id === id)
-  }
+  const textContent = await extractTextFromFile(fileBuffer, mimeType)
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return this.users.find((u) => u.username === username)
-  }
+  const storageKey = `${organizationId}/${uuidv4()}-${originalName}`
 
-  async createUser(user: InsertUser): Promise<User> {
-    const newUser = {
-      id: (Math.random() * 1e9).toFixed(0),
-      ...user,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as User
-    this.users.push(newUser)
-    return newUser
-  }
+  const command = new PutObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: storageKey,
+    Body: fileBuffer,
+    ContentType: mimeType,
+  })
 
-  async getAllContracts(): Promise<Contract[]> {
-    // return copy ordered by createdAt desc
-    return [...this.contracts].sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+  try {
+    // In a real app, this would upload to S3. Here, we're just logging.
+    // await s3Client.send(command);
+    console.log(
+      `[Storage] Mock S3 Upload Complete. Storage Key: ${storageKey}`,
     )
+  } catch (err) {
+    console.error('[Storage] Mock S3 Upload Failed:', err)
+    throw new Error('Failed to upload file to storage.')
   }
 
-  async getContract(id: string): Promise<Contract | undefined> {
-    return this.contracts.find((c) => c.id === id)
-  }
-
-  async createContract(contract: InsertContract): Promise<Contract> {
-    const newContract = {
-      id: (Math.random() * 1e9).toFixed(0),
-      ...contract,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as Contract
-    this.contracts.push(newContract)
-    return newContract
-  }
-
-  async updateContract(
-    id: string,
-    contract: Partial<InsertContract>
-  ): Promise<Contract | undefined> {
-    const idx = this.contracts.findIndex((c) => c.id === id)
-    if (idx === -1) return undefined
-    this.contracts[idx] = {
-      ...this.contracts[idx],
-      ...contract,
-      updatedAt: new Date(),
-    } as Contract
-    return this.contracts[idx]
-  }
-
-  async deleteContract(id: string): Promise<boolean> {
-    const before = this.contracts.length
-    this.contracts = this.contracts.filter((c) => c.id !== id)
-    return this.contracts.length < before
-  }
+  console.log(
+    `[Storage] Text extracted successfully. Character count: ${textContent.length}`,
+  )
+  return { storageKey, textContent }
 }
-
-// Choose storage at runtime to allow starting without a real database in dev
-let storageImpl: IStorage | null = null
-let initPromise: Promise<void> | null = null
-
-async function initStorage(): Promise<IStorage> {
-  if (storageImpl) return storageImpl
-
-  if (!initPromise) {
-    initPromise = (async () => {
-      try {
-        if (process.env.DATABASE_URL) {
-          const { DbStorage } = await import('./db-storage')
-          storageImpl = new DbStorage() as unknown as IStorage
-        } else {
-          storageImpl = new InMemoryStorage()
-        }
-      } catch (e) {
-        // On any DB init failure, fallback to in-memory for developer convenience
-        storageImpl = new InMemoryStorage()
-      }
-    })()
-  }
-
-  await initPromise
-  return storageImpl!
-}
-
-export const storage = {
-  async getUser(id: string) {
-    const impl = await initStorage()
-    return impl.getUser(id)
-  },
-  async getUserByUsername(username: string) {
-    const impl = await initStorage()
-    return impl.getUserByUsername(username)
-  },
-  async createUser(user: InsertUser) {
-    const impl = await initStorage()
-    return impl.createUser(user)
-  },
-  async getAllContracts() {
-    const impl = await initStorage()
-    return impl.getAllContracts()
-  },
-  async getContract(id: string) {
-    const impl = await initStorage()
-    return impl.getContract(id)
-  },
-  async createContract(contract: InsertContract) {
-    const impl = await initStorage()
-    return impl.createContract(contract)
-  },
-  async updateContract(id: string, contract: Partial<InsertContract>) {
-    const impl = await initStorage()
-    return impl.updateContract(id, contract)
-  },
-  async deleteContract(id: string) {
-    const impl = await initStorage()
-    return impl.deleteContract(id)
-  },
-} as IStorage

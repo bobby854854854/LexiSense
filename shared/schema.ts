@@ -1,84 +1,111 @@
-import { sql } from 'drizzle-orm'
 import {
   pgTable,
-  text,
+  uuid,
   varchar,
   timestamp,
-  numeric,
+  text,
+  pgEnum,
   jsonb,
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
+import { relations } from 'drizzle-orm'
 import { z } from 'zod'
 
-export const users = pgTable('users', {
-  id: varchar('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  username: text('username').notNull().unique(),
-  email: text('email').notNull().unique(),
-  password: text('password').notNull(),
-  firstName: text('first_name'),
-  lastName: text('last_name'),
-  role: text('role').notNull().default('user'),
-  isActive: text('is_active').notNull().default('true'),
-  lastLogin: timestamp('last_login'),
+// --- Enums ---
+export const userRoleEnum = pgEnum('user_role', ['admin', 'member'])
+export const contractStatusEnum = pgEnum('contract_status', [
+  'active',
+  'archived',
+  'processing',
+  'failed',
+  'expired',
+  'draft',
+  'expiring',
+])
+
+// --- Tables ---
+
+export const organizations = pgTable('organizations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 256 }).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 })
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  email: true,
-  password: true,
-  firstName: true,
-  lastName: true,
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name'),
+  email: varchar('email', { length: 256 }).unique().notNull(),
+  passwordHash: text('password_hash'),
+  emailVerified: timestamp('email_verified', { mode: 'date' }),
+  image: text('image'),
+  organizationId: uuid('organization_id')
+    .references(() => organizations.id, { onDelete: 'cascade' })
+    .notNull(),
+  role: userRoleEnum('role').default('member').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
-export const loginUserSchema = createInsertSchema(users).pick({
-  email: true,
-  password: true,
+export const userSessions = pgTable('user_sessions', {
+  sid: varchar('sid').primaryKey(),
+  sess: text('sess').notNull(),
+  expire: timestamp('expire').notNull(),
 })
-
-export type InsertUser = z.infer<typeof insertUserSchema>
-export type User = typeof users.$inferSelect
 
 export const contracts = pgTable('contracts', {
-  id: varchar('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  title: text('title').notNull(),
-  counterparty: text('counterparty').notNull(),
-  contractType: text('contract_type').notNull(),
-  status: text('status').notNull(),
-  value: text('value'),
-  effectiveDate: text('effective_date'),
-  expiryDate: text('expiry_date'),
-  riskLevel: text('risk_level'),
-  originalText: text('original_text'),
-  aiInsights: jsonb('ai_insights'),
-  userId: varchar('user_id').references(() => users.id),
-  tags: jsonb('tags').default([]),
-  isTemplate: text('is_template').notNull().default('false'),
-  templateCategory: text('template_category'),
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: varchar('name', { length: 512 }).notNull(),
+  status: contractStatusEnum('status').default('processing').notNull(),
+  storageKey: varchar('storage_key', { length: 1024 }).notNull(),
+  analysisResults: jsonb('analysis_results'),
+  analysisError: text('analysis_error'),
+  organizationId: uuid('organization_id')
+    .references(() => organizations.id, { onDelete: 'cascade' })
+    .notNull(),
+  uploadedByUserId: uuid('uploaded_by_user_id')
+    .references(() => users.id, { onDelete: 'set null' })
+    .notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  contractType: varchar('contract_type'),
+  title: varchar('title'),
+  counterparty: varchar('counterparty'),
+  riskLevel: varchar('risk_level'),
+  value: varchar('value'),
+  effectiveDate: timestamp('effective_date'),
+  expiryDate: timestamp('expiry_date'),
 })
 
-export const insertContractSchema = createInsertSchema(contracts).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+// --- Relations ---
+
+export const usersRelations = relations(users, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [users.organizationId],
+    references: [organizations.id],
+  }),
+}))
+
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  users: many(users),
+  contracts: many(contracts),
+}))
+
+export const contractsRelations = relations(contracts, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [contracts.organizationId],
+    references: [organizations.id],
+  }),
+  uploadedByUser: one(users, {
+    fields: [contracts.uploadedByUserId],
+    references: [users.id],
+  }),
+}))
+
+// --- Zod Schemas for Validation ---
+export const insertContractSchema = createInsertSchema(contracts)
+export const insertUserSchema = createInsertSchema(users, {
+  email: (schema) => schema.email.email({ message: 'Invalid email address.' }),
 })
 
-export const updateContractSchema = insertContractSchema.partial()
-
-export type InsertContract = z.infer<typeof insertContractSchema>
-export type UpdateContract = z.infer<typeof updateContractSchema>
 export type Contract = typeof contracts.$inferSelect
-
-export interface AIInsight {
-  type: 'key-term' | 'obligation' | 'risk' | 'opportunity'
-  title: string
-  content: string
-  severity?: 'low' | 'medium' | 'high'
-}
+export type AIInsight = {}

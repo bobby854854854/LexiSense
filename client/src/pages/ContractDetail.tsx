@@ -1,165 +1,201 @@
-import { useParams } from 'wouter'
-import { useQuery } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect } from 'react'
+import { Link } from 'wouter'
+import { useToast } from '@/components/ui/use-toast'
+import type { Contract, AnalysisResults } from '@shared/types'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert"
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, DollarSign, AlertTriangle } from 'lucide-react'
-import { Link } from 'wouter'
+import { Loader2, ArrowLeft, Users, Calendar, AlertTriangle, FileWarning, ServerCrash } from 'lucide-react'
+import { analysisResultsSchema } from '@shared/types'
 
-async function fetchContract(id: string) {
-  const response = await fetch(`/api/contracts/${id}`)
-  if (!response.ok) {
-    throw new Error('Failed to fetch contract')
-  }
-  return response.json()
+interface ContractDetailPageProps {
+  id: string
 }
 
-export default function ContractDetail() {
-  const { id } = useParams()
+export function ContractDetailPage({ id }: ContractDetailPageProps) {
+  const { toast } = useToast()
+  const [contract, setContract] = useState<Contract | null>(null)
+  const [analysis, setAnalysis] = useState<AnalysisResults | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const {
-    data: contract,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['contract', id],
-    queryFn: () => fetchContract(id!),
-    enabled: !!id,
-  })
+  useEffect(() => {
+    const fetchContractDetails = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const response = await fetch(`/api/contracts/${id}`)
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Contract not found.')
+          }
+          throw new Error('Failed to fetch contract details.')
+        }
+        const data: Contract = await response.json()
+        setContract(data)
+
+        if (data.status === 'active' && data.analysisResults) {
+          const validation = analysisResultsSchema.safeParse(data.analysisResults)
+          if (validation.success) {
+            setAnalysis(validation.data)
+          } else {
+            console.error('AI analysis data is malformed:', validation.error)
+            throw new Error('The AI analysis for this contract is in an invalid format.')
+          }
+        }
+        
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.'
+        setError(errorMessage)
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: errorMessage,
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchContractDetails()
+  }, [id, toast])
 
   if (isLoading) {
-    return <div>Loading contract...</div>
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    )
   }
 
-  if (error || !contract) {
-    return <div>Contract not found</div>
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+          <Card className="w-full max-w-md text-center">
+              <CardHeader>
+                  <CardTitle className="flex items-center justify-center gap-2">
+                      <ServerCrash className="h-8 w-8 text-destructive" />
+                      Loading Error
+                  </CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <p className="text-muted-foreground mb-4">{error}</p>
+                  <Button asChild>
+                    <Link href="/dashboard"><ArrowLeft className="mr-2 h-4 w-4"/>Back to Dashboard</Link>
+                  </Button>
+              </CardContent>
+          </Card>
+      </div>
+    );
   }
 
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'high':
-        return 'destructive'
-      case 'medium':
-        return 'default'
-      case 'low':
-        return 'secondary'
-      default:
-        return 'secondary'
-    }
+  if (!contract) {
+    return <div>Contract not found.</div>
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/contracts">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Contracts
-          </Button>
-        </Link>
+        <Button asChild variant="outline" size="icon">
+          <Link href="/dashboard">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{contract.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            Uploaded on {new Date(contract.createdAt).toLocaleDateString()}
+          </p>
+        </div>
       </div>
+      
+      {contract.status === 'processing' && (
+         <Alert variant="default" className="bg-blue-50 border-blue-200">
+           <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+            <AlertTitle className="text-blue-800">Analysis In Progress</AlertTitle>
+            <AlertDescription className="text-blue-700">
+              LexiSense is currently analyzing this contract. The results will appear here once the process is complete. This may take a few moments.
+            </AlertDescription>
+        </Alert>
+      )}
 
-      <div className="grid gap-6">
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-2xl">{contract.title}</CardTitle>
-                <p className="text-muted-foreground mt-2">
-                  Counterparty: {contract.counterparty}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Badge
-                  variant={
-                    contract.status === 'active' ? 'default' : 'secondary'
-                  }
-                >
-                  {contract.status}
-                </Badge>
-                <Badge variant={getRiskColor(contract.riskLevel)}>
-                  {contract.riskLevel} risk
-                </Badge>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Value:</span>
-                <span className="font-medium">{contract.value}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Effective:
-                </span>
-                <span className="font-medium">{contract.effectiveDate}</span>
-              </div>
-              {contract.expiryDate && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    Expires:
-                  </span>
-                  <span className="font-medium">{contract.expiryDate}</span>
+      {contract.status === 'failed' && (
+         <Alert variant="destructive">
+           <FileWarning className="h-5 w-5" />
+            <AlertTitle>Analysis Failed</AlertTitle>
+            <AlertDescription>
+              We were unable to analyze this contract. This can happen with unsupported file formats, corrupted files, or very complex layouts. Please try uploading the document again.
+            </AlertDescription>
+        </Alert>
+      )}
+
+      {analysis && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <CardTitle>AI-Generated Summary</CardTitle>
+              <CardDescription>A concise overview of the contract's purpose and scope.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">{analysis.summary}</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-primary"/>Parties Involved</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {analysis.parties.map((party, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <span className="font-medium">{party.name}</span>
+                  <Badge variant="secondary">{party.role}</Badge>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {contract.aiInsights && contract.aiInsights.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Analysis</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {contract.aiInsights.map((insight: any, index: number) => (
-                  <div key={index} className="border rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      {insight.type === 'risk' && (
-                        <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5" />
-                      )}
-                      <div className="flex-1">
-                        <h4 className="font-medium">{insight.title}</h4>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {insight.content}
-                        </p>
-                        {insight.severity && (
-                          <Badge
-                            variant={getRiskColor(insight.severity)}
-                            className="mt-2"
-                          >
-                            {insight.severity}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              ))}
             </CardContent>
           </Card>
-        )}
-
-        {contract.originalText && (
+          
           <Card>
             <CardHeader>
-              <CardTitle>Original Contract Text</CardTitle>
+              <CardTitle className="flex items-center gap-2"><Calendar className="h-5 w-5 text-primary"/>Key Dates</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="bg-muted p-4 rounded-lg">
-                <pre className="whitespace-pre-wrap text-sm">
-                  {contract.originalText}
-                </pre>
-              </div>
+            <CardContent className="space-y-3 text-sm">
+                <div className="flex justify-between"><strong>Effective Date:</strong><span>{analysis.keyDates.effectiveDate}</span></div>
+                <div className="flex justify-between"><strong>Termination Date:</strong><span>{analysis.keyDates.terminationDate}</span></div>
+                <div>
+                  <strong>Renewal Terms:</strong>
+                  <p className="text-muted-foreground mt-1">{analysis.keyDates.renewalTerms}</p>
+                </div>
             </CardContent>
           </Card>
-        )}
-      </div>
+
+           <Card className="lg:col-span-3">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-amber-700"><AlertTriangle className="h-5 w-5"/>Potential Risks</CardTitle>
+              <CardDescription>High-level risks identified by LexiSense for your review.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+               {analysis.highLevelRisks.map((risk, index) => (
+                  <Alert key={index} variant="default" className="border-amber-300 bg-amber-50">
+                     <AlertTriangle className="h-4 w-4 text-amber-600" />
+                     <AlertDescription className="text-amber-800">{risk}</AlertDescription>
+                  </Alert>
+               ))}
+            </CardContent>
+          </Card>
+
+        </div>
+      )}
     </div>
   )
 }

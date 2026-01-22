@@ -8,14 +8,13 @@
     "module": "ESNext",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "ignoreDeprecations": "6.0",
+
     "lib": ["esnext", "dom", "dom.iterable"],
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
-    "baseUrl": ".",
     "types": ["node", "vite/client", "vitest/globals", "react", "react-dom"],
     "paths": {
       "@/*": ["./client/src/*"],

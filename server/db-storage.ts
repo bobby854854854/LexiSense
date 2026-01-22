@@ -1,70 +1,80 @@
-import {
-  type User,
-  type InsertUser,
-  type Contract,
-  type InsertContract,
-  contracts,
-} from '@shared/schema'
-import { eq, desc } from 'drizzle-orm'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { v4 as uuidv4 } from 'uuid'
+import pdf from 'pdf-parse'
 
-async function getDb() {
-  // dynamic import to avoid throwing on initial load if DATABASE_URL isn't set
-  const mod = await import('./db')
-  return mod.db
+// This is a mock S3 client. In a real production environment,
+// you would configure this with actual AWS credentials and region.
+const s3Client = new S3Client({
+  region: 'us-east-1',
+  endpoint: 'http://localhost:9000', // Using a localstack/minio endpoint for dev
+  credentials: {
+    accessKeyId: 'S3RVER',
+    secretAccessKey: 'S3RVER',
+  },
+  forcePathStyle: true,
+})
+
+const BUCKET_NAME = 'lexisense-contracts'
+
+/**
+ * Extracts text content from a file buffer based on its MIME type.
+ * @param fileBuffer The raw file buffer.
+ * @param mimeType The MIME type of the file (e.g., 'application/pdf', 'text/plain').
+ * @returns A promise that resolves to the extracted text content.
+ */
+async function extractTextFromFile(
+  fileBuffer: Buffer,
+  mimeType: string,
+): Promise<string> {
+  if (mimeType === 'application/pdf') {
+    const data = await pdf(fileBuffer)
+    return data.text
+  } else if (mimeType === 'text/plain') {
+    return fileBuffer.toString('utf-8')
+  }
+  // Future: Add support for .docx, .rtf etc.
+  throw new Error(`Unsupported file type: ${mimeType}`)
 }
 
-export class DbStorage {
-  async getUser(id: string): Promise<User | undefined> {
-    return undefined
+/**
+ * Uploads a file to the mock S3 storage and extracts its text content.
+ * @param fileBuffer The raw file buffer of the file.
+ * @param originalName The original name of the file.
+ * @param organizationId The ID of the organization the file belongs to.
+ * @returns A promise that resolves to an object containing the storageKey and the extracted textContent.
+ */
+export async function uploadFileToStorage(
+  fileBuffer: Buffer,
+  originalName: string,
+  mimeType: string,
+  organizationId: string,
+): Promise<{ storageKey: string; textContent: string }> {
+  console.log('[Storage] Starting file upload and text extraction...')
+
+  const textContent = await extractTextFromFile(fileBuffer, mimeType)
+
+  const storageKey = `${organizationId}/${uuidv4()}-${originalName}`
+
+  const command = new PutObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: storageKey,
+    Body: fileBuffer,
+    ContentType: mimeType,
+  })
+
+  try {
+    // In a real app, this would upload to S3. Here, we're just logging.
+    // await s3Client.send(command);
+    console.log(
+      `[Storage] Mock S3 Upload Complete. Storage Key: ${storageKey}`,
+    )
+  } catch (err) {
+    console.error('[Storage] Mock S3 Upload Failed:', err)
+    throw new Error('Failed to upload file to storage.')
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return undefined
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    throw new Error('Not implemented')
-  }
-
-  async getAllContracts(): Promise<Contract[]> {
-    const db = await getDb()
-    return await db.select().from(contracts).orderBy(desc(contracts.createdAt))
-  }
-
-  async getContract(id: string): Promise<Contract | undefined> {
-    const db = await getDb()
-    const results = await db
-      .select()
-      .from(contracts)
-      .where(eq(contracts.id, id))
-    return results[0]
-  }
-
-  async createContract(contract: InsertContract): Promise<Contract> {
-    const db = await getDb()
-    const results = await db.insert(contracts).values(contract).returning()
-    return results[0]
-  }
-
-  async updateContract(
-    id: string,
-    contract: Partial<InsertContract>
-  ): Promise<Contract | undefined> {
-    const db = await getDb()
-    const results = await db
-      .update(contracts)
-      .set({ ...contract, updatedAt: new Date() })
-      .where(eq(contracts.id, id))
-      .returning()
-    return results[0]
-  }
-
-  async deleteContract(id: string): Promise<boolean> {
-    const db = await getDb()
-    const results = await db
-      .delete(contracts)
-      .where(eq(contracts.id, id))
-      .returning()
-    return results.length > 0
-  }
+  console.log(
+    `[Storage] Text extracted successfully. Character count: ${textContent.length}`,
+  )
+  return { storageKey, textContent }
 }

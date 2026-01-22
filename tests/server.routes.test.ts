@@ -34,19 +34,14 @@ import { createServer } from 'http'
 import express from 'express'
 
 // We will import registerRoutes and then attach to a test server
-import { registerRoutes } from '../server/routes'
+import router from '../server/routes'
 
-let server: any
 let app: express.Express
 
 beforeAll(async () => {
   app = express()
   app.use(express.json())
-  server = await registerRoutes(app)
-})
-
-afterAll(async () => {
-  await new Promise((resolve) => server.close(resolve))
+  app.use(router)
 })
 
 it('GET /api/contracts returns empty array', async () => {
