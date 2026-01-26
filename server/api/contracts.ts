@@ -4,9 +4,8 @@ import { eq } from 'drizzle-orm'
 import { db } from '../db'
 import { contracts } from '../db/schema'
 import { isAuthenticated } from '../auth'
-import { uploadFileToStorage } from '../storage'
 import { analyzeContract } from '../ai'
-import { Contract } from '@shared/types'
+import type { Contract } from '@shared/types'
 
 const router = Router()
 const upload = multer({
@@ -21,7 +20,7 @@ router.get('/', isAuthenticated, async (req, res) => {
   }
   try {
     const userContracts = await db.query.contracts.findMany({
-      where: eq(contracts.organizationId, req.user.organizationId),
+      where: eq(contracts.userId, req.user.id),
       orderBy: (contracts, { desc }) => [desc(contracts.createdAt)],
     })
     res.json(userContracts)
@@ -42,7 +41,7 @@ router.get('/:id', isAuthenticated, async (req, res) => {
       where: eq(contracts.id, id),
     })
 
-    if (!contract || contract.organizationId !== req.user.organizationId) {
+    if (!contract || contract.userId !== req.user.id) {
       return res.status(404).json({ message: 'Contract not found.' })
     }
 
@@ -66,46 +65,37 @@ router.post(
     let insertedContract: Contract | undefined
 
     try {
-      const { storageKey, textContent } = await uploadFileToStorage(
-        req.file.buffer,
-        req.file.originalname,
-        req.file.mimetype,
-        req.user.organizationId,
-      )
+      const textContent = req.file.buffer.toString('utf-8')
 
       const [newContract] = await db
         .insert(contracts)
         .values({
-          name: req.file.originalname,
-          storageKey,
-          organizationId: req.user.organizationId,
-          uploadedByUserId: req.user.id,
+          title: req.file.originalname,
+          counterparty: 'To be determined',
+          contractType: 'General',
           status: 'processing',
+          originalText: textContent,
+          userId: req.user.id,
         })
         .returning()
       insertedContract = newContract
 
       res.status(201).json(insertedContract)
 
-      // --- Trigger AI analysis in the background ---
-      analyzeContract(insertedContract.id, textContent)
+      // Trigger AI analysis in the background
+      if (newContract.id) {
+        analyzeContract(newContract.id, textContent).catch(err =>
+          console.error('Background analysis failed:', err)
+        )
+      }
     } catch (error) {
       console.error('File upload processing failed:', error)
       const errorMessage =
         error instanceof Error ? error.message : 'An unknown error occurred.'
 
-      // If a contract record was already created, update it to failed.
-      if (insertedContract) {
-        await db
-          .update(contracts)
-          .set({ status: 'failed', analysisError: errorMessage })
-          .where(eq(contracts.id, insertedContract.id))
-      }
-
-      // We send a specific error message to the frontend toast
       res.status(500).json({ message: `Upload failed: ${errorMessage}` })
     }
-  },
+  }
 )
 
 export default router

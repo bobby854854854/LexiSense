@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Search, Upload, Filter, X } from 'lucide-react'
-import { getContracts } from '@/lib/api'
+import { getContracts } from '@/api'
 import type { Contract as UIContract } from '@/components/contract-table'
 import { useLocation } from 'wouter'
 import type { Contract } from '@shared/schema'
@@ -55,12 +55,8 @@ export default function Contracts() {
 
   // Ensure status values conform to the UI Contract['status'] union
   function normalizeStatus(s: unknown): UIContract['status'] {
-    if (
-      s === 'active' ||
-      s === 'expiring' ||
-      s === 'expired' ||
-      s === 'draft'
-    ) {
+    const validStatuses = ['active', 'expiring', 'expired', 'draft']
+    if (typeof s === 'string' && validStatuses.includes(s)) {
       return s as UIContract['status']
     }
     return 'draft'
@@ -122,7 +118,7 @@ export default function Contracts() {
     return filtered.map((contract) => ({
       ...contract,
       type: contract.contractType || 'N/A',
-      status: normalizeStatus((contract as any).status),
+      status: normalizeStatus(contract.status),
     })) as UIContract[]
   }, [
     contracts,

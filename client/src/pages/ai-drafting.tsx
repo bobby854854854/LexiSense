@@ -14,8 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sparkles, Download, Send, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { draftContract } from '@/lib/api'
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/components/ui/use-toast'
 
 export default function AIDrafting() {
   const { toast } = useToast()
@@ -27,7 +26,17 @@ export default function AIDrafting() {
   const [generatedText, setGeneratedText] = useState('')
 
   const draftMutation = useMutation({
-    mutationFn: draftContract,
+    mutationFn: async (data: { contractType: string; party1: string; party2: string; value: string; terms: string }) => {
+      const response = await fetch('/api/contracts/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to draft contract')
+      }
+      return response.json()
+    },
     onSuccess: (data) => {
       setGeneratedText(data.contract)
     },

@@ -21,7 +21,7 @@ import { UploadContractModal } from '@/components/UploadContractModal'
 import { useToast } from '@/components/ui/use-toast'
 import type { Contract } from '@shared/types'
 import { Link } from 'wouter'
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils'
 
 export function DashboardPage() {
   const { toast } = useToast()

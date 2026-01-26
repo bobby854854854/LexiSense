@@ -13,8 +13,8 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Sparkles, Upload as UploadIcon, Loader2 } from 'lucide-react'
-import { analyzeContract } from '@/lib/api'
-import { useToast } from '@/hooks/use-toast'
+import { uploadContract } from '@/api'
+import { useToast } from '@/components/ui/use-toast'
 import { useLocation } from 'wouter'
 
 export default function ContractUpload() {
@@ -27,7 +27,11 @@ export default function ContractUpload() {
   const [contractText, setContractText] = useState('')
 
   const analyzeMutation = useMutation({
-    mutationFn: analyzeContract,
+    mutationFn: async (data: { text: string; title: string; counterparty: string; contractType: string }) => {
+      // Create a File object from the text
+      const file = new File([data.text], `${data.title}.txt`, { type: 'text/plain' })
+      return uploadContract(file)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/contracts'] })
       toast({
