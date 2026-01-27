@@ -70,12 +70,7 @@ function App() {
   )
 }
 
-export default App
-
-// File: client/src/index.css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+export default 
 
 @layer base {
   :root {
