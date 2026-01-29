@@ -58,13 +58,13 @@
     "cmdk": "^1.1.1",
     "connect-pg-simple": "^9.0.1",
     "cross-env": "^7.0.3",
-    "csurf": "^1.11.0",
+    "csurf": "^1.2.2",
     "dompurify": "^3.1.6",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.32.1",
     "drizzle-zod": "^0.5.1",
     "embla-carousel-react": "^8.6.0",
-    "esbuild": "^0.23.0",
+    "esbuild": "^0.27.2",
     "express": "^4.19.2",
     "express-rate-limit": "^8.1.0",
     "express-session": "^1.18.0",
@@ -123,7 +123,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
     "concurrently": "^9.2.1",
-    "drizzle-kit": "^0.31.8",
+    "drizzle-kit": "^0.18.1",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
@@ -135,7 +135,7 @@
     "prettier-plugin-tailwindcss": "^0.6.5",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.5.4",
-    "vite": "^5.3.5",
-    "vitest": "^2.0.4"
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
   }
 }

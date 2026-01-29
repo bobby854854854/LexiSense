@@ -11,6 +11,11 @@ export default defineConfig({
       '@shared': path.resolve(__dirname, './shared'),
     },
   },
+  css: {
+    postcss: {
+      from: path.resolve(__dirname, './client/src/index.css'),
+    },
+  },
   server: {
     proxy: {
       '/api': {
