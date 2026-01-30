@@ -7,7 +7,7 @@
     "dev": "concurrently \"cross-env NODE_ENV=development tsx server/index.ts\" \"vite\"",
     "dev:server": "cross-env NODE_ENV=development tsx server/index.ts",
     "dev:client": "vite",
-    "build": "vite build && esbuild ./server/index.ts --platform=node --packages=external --external:@shared --bundle --format=esm --outfile=./dist/index.js",
+    "build": "vite build && esbuild ./server/index.ts --platform=node --packages=external --external:@shared --external:dotenv --bundle --format=esm --outfile=./dist/index.js",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "check": "tsc",
     "typecheck": "tsc --noEmit",
