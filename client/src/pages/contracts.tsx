@@ -67,19 +67,33 @@ export default function Contracts() {
     return Array.from(types)
   }, [contracts])
 
+  type NormalizedContract = Contract & {
+    normalizedTitle: string
+    normalizedCounterparty: string
+    normalizedContractType: string
+    parsedValue: number
+    createdAtTime: number
+  }
+
+  const normalizedContracts = useMemo<NormalizedContract[]>(() => {
+    return contracts.map((contract) => ({
+      ...contract,
+      normalizedTitle: contract.title?.toLowerCase() || '',
+      normalizedCounterparty: contract.counterparty?.toLowerCase() || '',
+      normalizedContractType: contract.contractType?.toLowerCase() || '',
+      parsedValue: parseFloat(contract.value?.replace(/[^\d.-]/g, '') || '0'),
+      createdAtTime: new Date(contract.createdAt || 0).getTime(),
+    }))
+  }, [contracts])
+
   const filteredContracts = useMemo(() => {
-    const filtered = contracts.filter((contract) => {
+    const normalizedQuery = searchQuery.toLowerCase()
+    const filtered = normalizedContracts.filter((contract) => {
       const matchesSearch =
-        searchQuery === '' ||
-        (contract.title?.toLowerCase() || '').includes(
-          searchQuery.toLowerCase()
-        ) ||
-        (contract.counterparty?.toLowerCase() || '').includes(
-          searchQuery.toLowerCase()
-        ) ||
-        (contract.contractType?.toLowerCase() || '').includes(
-          searchQuery.toLowerCase()
-        )
+        normalizedQuery === '' ||
+        contract.normalizedTitle.includes(normalizedQuery) ||
+        contract.normalizedCounterparty.includes(normalizedQuery) ||
+        contract.normalizedContractType.includes(normalizedQuery)
 
       const matchesStatus =
         statusFilter === 'all' || contract.status === statusFilter
@@ -95,17 +109,17 @@ export default function Contracts() {
       let aVal, bVal
       switch (sortBy) {
         case 'title':
-          aVal = a.title?.toLowerCase() || ''
-          bVal = b.title?.toLowerCase() || ''
+          aVal = a.normalizedTitle
+          bVal = b.normalizedTitle
           break
         case 'value':
-          aVal = parseFloat(a.value?.replace(/[^\d.-]/g, '') || '0')
-          bVal = parseFloat(b.value?.replace(/[^\d.-]/g, '') || '0')
+          aVal = a.parsedValue
+          bVal = b.parsedValue
           break
         case 'date':
         default:
-          aVal = new Date(a.createdAt || 0).getTime()
-          bVal = new Date(b.createdAt || 0).getTime()
+          aVal = a.createdAtTime
+          bVal = b.createdAtTime
       }
 
       if (sortOrder === 'asc') {
@@ -121,7 +135,7 @@ export default function Contracts() {
       status: normalizeStatus(contract.status),
     })) as UIContract[]
   }, [
-    contracts,
+    normalizedContracts,
     searchQuery,
     statusFilter,
     typeFilter,
