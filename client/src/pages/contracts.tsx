@@ -67,48 +67,33 @@ export default function Contracts() {
     return Array.from(types)
   }, [contracts])
 
+  type NormalizedContract = Contract & {
+    normalizedTitle: string
+    normalizedCounterparty: string
+    normalizedContractType: string
+    parsedValue: number
+    createdAtTime: number
+  }
+
+  const normalizedContracts = useMemo<NormalizedContract[]>(() => {
+    return contracts.map((contract) => ({
+      ...contract,
+      normalizedTitle: contract.title?.toLowerCase() || '',
+      normalizedCounterparty: contract.counterparty?.toLowerCase() || '',
+      normalizedContractType: contract.contractType?.toLowerCase() || '',
+      parsedValue: parseFloat(contract.value?.replace(/[^\d.-]/g, '') || '0'),
+      createdAtTime: new Date(contract.createdAt || 0).getTime(),
+    }))
+  }, [contracts])
+
   const filteredContracts = useMemo(() => {
     const normalizedQuery = searchQuery.toLowerCase()
-    const valueCache = new Map<string, number>()
-    const titleCache = new Map<string, string>()
-    const dateCache = new Map<string, number>()
-
-    const getTitle = (contract: Contract) => {
-      if (titleCache.has(contract.id)) {
-        return titleCache.get(contract.id) as string
-      }
-      const title = contract.title?.toLowerCase() || ''
-      titleCache.set(contract.id, title)
-      return title
-    }
-
-    const getValue = (contract: Contract) => {
-      if (valueCache.has(contract.id)) {
-        return valueCache.get(contract.id) as number
-      }
-      const value = parseFloat(contract.value?.replace(/[^\d.-]/g, '') || '0')
-      valueCache.set(contract.id, value)
-      return value
-    }
-
-    const getDate = (contract: Contract) => {
-      if (dateCache.has(contract.id)) {
-        return dateCache.get(contract.id) as number
-      }
-      const date = new Date(contract.createdAt || 0).getTime()
-      dateCache.set(contract.id, date)
-      return date
-    }
-
-    const filtered = contracts.filter((contract) => {
-      const title = contract.title?.toLowerCase() || ''
-      const counterparty = contract.counterparty?.toLowerCase() || ''
-      const contractType = contract.contractType?.toLowerCase() || ''
+    const filtered = normalizedContracts.filter((contract) => {
       const matchesSearch =
         normalizedQuery === '' ||
-        title.includes(normalizedQuery) ||
-        counterparty.includes(normalizedQuery) ||
-        contractType.includes(normalizedQuery)
+        contract.normalizedTitle.includes(normalizedQuery) ||
+        contract.normalizedCounterparty.includes(normalizedQuery) ||
+        contract.normalizedContractType.includes(normalizedQuery)
 
       const matchesStatus =
         statusFilter === 'all' || contract.status === statusFilter
@@ -124,17 +109,17 @@ export default function Contracts() {
       let aVal, bVal
       switch (sortBy) {
         case 'title':
-          aVal = getTitle(a)
-          bVal = getTitle(b)
+          aVal = a.normalizedTitle
+          bVal = b.normalizedTitle
           break
         case 'value':
-          aVal = getValue(a)
-          bVal = getValue(b)
+          aVal = a.parsedValue
+          bVal = b.parsedValue
           break
         case 'date':
         default:
-          aVal = getDate(a)
-          bVal = getDate(b)
+          aVal = a.createdAtTime
+          bVal = b.createdAtTime
       }
 
       if (sortOrder === 'asc') {
@@ -150,7 +135,7 @@ export default function Contracts() {
       status: normalizeStatus(contract.status),
     })) as UIContract[]
   }, [
-    contracts,
+    normalizedContracts,
     searchQuery,
     statusFilter,
     typeFilter,
