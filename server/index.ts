@@ -6,26 +6,44 @@ import rateLimit from 'express-rate-limit'
 import contractsRouter from './api/contracts'
 import authRouter from './api/auth'
 
+import connectPgSimple from 'connect-pg-simple'
+import { pool } from './db'
+
 const app = express()
+
+// Trust reverse proxy (Render, etc.)
+app.set('trust proxy', 1)
 
 // Security middleware
 app.use(helmet())
-app.use(rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-}))
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+  })
+)
 
 // Body parsing
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
+const PgStore = connectPgSimple(session)
+const sessionStore = new PgStore({
+  pool,
+  tableName: 'user_sessions',
+})
+
 // Session configuration
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'dev-secret',
+    store: sessionStore,
+    secret: process.env.SESSION_SECRET as string,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production' },
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+    },
   })
 )
 
