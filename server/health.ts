@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
 import { pool } from './db'
+import { checkRedisHealth } from './redis'
 import os from 'os'
 
 // Track server start time
@@ -64,6 +65,9 @@ export async function healthCheck(req: Request, res: Response) {
     dbStatus = 'unhealthy'
   }
   
+  // Redis health check
+  const redisHealth = await checkRedisHealth()
+  
   // Request statistics
   const errorRate = totalRequests > 0 
     ? ((failedRequests / totalRequests) * 100).toFixed(2) 
@@ -102,6 +106,11 @@ export async function healthCheck(req: Request, res: Response) {
       status: dbStatus,
       responseTime: `${dbResponseTime}ms`,
     },
+    redis: {
+      connected: redisHealth.connected,
+      latency: redisHealth.latency ? `${redisHealth.latency}ms` : undefined,
+      error: redisHealth.error,
+    },
     requests: {
       total: totalRequests,
       successful: successfulRequests,
@@ -112,6 +121,7 @@ export async function healthCheck(req: Request, res: Response) {
       nodeEnv: process.env.NODE_ENV || 'development',
       hasOpenAI: !!process.env.OPENAI_API_KEY,
       hasS3: !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY),
+      hasRedis: redisHealth.connected,
     },
     performance: {
       responseTime: `${responseTime}ms`,

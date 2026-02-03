@@ -2,7 +2,6 @@ import 'dotenv/config'
 import express from 'express'
 import session from 'express-session'
 import helmet from 'helmet'
-import rateLimit from 'express-rate-limit'
 import contractsRouter from './api/contracts'
 import authRouter from './api/auth'
 
@@ -11,8 +10,16 @@ import { pool } from './db'
 import { logger } from './logger'
 import { requestLogger, errorLogger } from './middleware/logging'
 import { healthCheck, simpleHealthCheck } from './health'
+import { createRedisClient, createRateLimiter, closeRedis } from './redis'
 
 const app = express()
+
+// Initialize Redis connection (optional - falls back to memory if not available)
+createRedisClient().catch((error) => {
+  logger.warn('Starting without Redis', { 
+    error: error instanceof Error ? error.message : 'Unknown error' 
+  })
+})
 
 // Trust reverse proxy (Render, etc.)
 app.set('trust proxy', 1)
@@ -22,10 +29,13 @@ app.use(requestLogger)
 
 // Security middleware
 app.use(helmet())
+
+// Rate limiting with Redis (falls back to memory if Redis unavailable)
 app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100,
+  createRateLimiter({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // 100 requests per 15 minutes
+    message: 'Too many requests from this IP, please try again later.',
   })
 )
 
@@ -66,10 +76,29 @@ app.use(errorLogger)
 
 const PORT = process.env.PORT || 3000
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   logger.info(`Server started on port ${PORT}`, { 
     nodeEnv: process.env.NODE_ENV,
     port: PORT,
+  })
+})
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM signal received: closing HTTP server')
+  server.close(async () => {
+    logger.info('HTTP server closed')
+    await closeRedis()
+    process.exit(0)
+  })
+})
+
+process.on('SIGINT', async () => {
+  logger.info('SIGINT signal received: closing HTTP server')
+  server.close(async () => {
+    logger.info('HTTP server closed')
+    await closeRedis()
+    process.exit(0)
   })
 })
 
