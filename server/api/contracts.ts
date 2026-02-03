@@ -6,6 +6,7 @@ import { contracts } from '../db/schema'
 import { isAuthenticated } from '../auth'
 import { analyzeContract } from '../ai'
 import { logger, auditLogger } from '../logger'
+import { uploadFileToS3, getPresignedDownloadUrl, getPresignedUploadUrl } from '../storage'
 import type { Contract } from '@shared/types'
 
 const router = Router()
@@ -82,7 +83,13 @@ router.post(
     let insertedContract: Contract | undefined
 
     try {
-      const textContent = req.file.buffer.toString('utf-8')
+      // Upload to S3 with validation and text extraction
+      const { storageKey, textContent } = await uploadFileToS3(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype,
+        req.user.id
+      )
 
       const [newContract] = await db
         .insert(contracts)
@@ -92,6 +99,7 @@ router.post(
           contractType: 'General',
           status: 'processing',
           originalText: textContent,
+          storageKey, // Store S3 key
           userId: req.user.id,
         })
         .returning()
@@ -103,6 +111,7 @@ router.post(
         contractId: newContract.id,
         filename: req.file.originalname,
         size: req.file.size,
+        storageKey,
       })
 
       res.status(201).json(insertedContract)
@@ -129,5 +138,85 @@ router.post(
     }
   }
 )
+
+// GET /api/contracts/:id/download - Get presigned download URL
+router.get('/:id/download', isAuthenticated, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Authentication required.' })
+  }
+  
+  const { id } = req.params
+  
+  try {
+    const contract = await db.query.contracts.findFirst({
+      where: eq(contracts.id, id),
+    })
+
+    if (!contract || contract.userId !== req.user.id) {
+      logger.warn('Contract not found or unauthorized download attempt', { 
+        contractId: id, 
+        userId: req.user.id 
+      })
+      return res.status(404).json({ message: 'Contract not found.' })
+    }
+
+    if (!contract.storageKey) {
+      return res.status(400).json({ message: 'Contract file not available in storage.' })
+    }
+
+    const downloadUrl = await getPresignedDownloadUrl(contract.storageKey, 3600)
+    
+    auditLogger.log('CONTRACT_DOWNLOAD_URL', req.user.id, { 
+      contractId: id,
+      storageKey: contract.storageKey 
+    })
+    
+    res.json({ downloadUrl, expiresIn: 3600 })
+  } catch (error) {
+    logger.error('Failed to generate download URL', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      contractId: id,
+      userId: req.user.id
+    })
+    res.status(500).json({ message: 'Failed to generate download URL.' })
+  }
+})
+
+// POST /api/contracts/upload-url - Get presigned upload URL (for direct client upload)
+router.post('/upload-url', isAuthenticated, async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Authentication required.' })
+  }
+  
+  const { filename, mimeType } = req.body
+  
+  if (!filename || !mimeType) {
+    return res.status(400).json({ message: 'Filename and mimeType are required.' })
+  }
+  
+  try {
+    const { uploadUrl, storageKey } = await getPresignedUploadUrl(
+      filename,
+      mimeType,
+      req.user.id,
+      3600
+    )
+    
+    logger.info('Generated presigned upload URL', {
+      userId: req.user.id,
+      filename,
+      storageKey
+    })
+    
+    res.json({ uploadUrl, storageKey, expiresIn: 3600 })
+  } catch (error) {
+    logger.error('Failed to generate upload URL', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      userId: req.user.id,
+      filename
+    })
+    res.status(500).json({ message: 'Failed to generate upload URL.' })
+  }
+})
 
 export default router

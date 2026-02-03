@@ -19,6 +19,7 @@
     "env:check": "tsx scripts/check-env.ts"
   },
   "dependencies": {
+    "@aws-sdk/s3-request-presigner": "^3.982.0",
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",
@@ -67,6 +68,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^8.1.0",
     "express-session": "^1.18.0",
+    "file-type": "^21.3.0",
     "helmet": "^7.1.0",
     "input-otp": "^1.4.2",
     "isomorphic-dompurify": "^2.29.0",

@@ -26,6 +26,7 @@ export const contracts = pgTable('contracts', {
   riskLevel: text('risk_level'),
   originalText: text('original_text'),
   aiInsights: jsonb('ai_insights'),
+  storageKey: text('storage_key'), // S3 storage key
   userId: varchar('user_id', { length: 36 }).references(() => users.id),
   tags: jsonb('tags').default([]),
   isTemplate: text('is_template').notNull().default('false'),
