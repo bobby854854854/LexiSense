@@ -34,3 +34,16 @@ export const contracts = pgTable('contracts', {
   createdAt: timestamp('created_at').notNull().default(new Date()),
   updatedAt: timestamp('updated_at').notNull().default(new Date()),
 })
+
+export const invitations = pgTable('invitations', {
+  id: varchar('id', { length: 36 }).primaryKey().default('gen_random_uuid()'),
+  email: text('email').notNull(),
+  token: text('token').notNull().unique(),
+  role: text('role').notNull().default('user'),
+  status: text('status').notNull().default('pending'), // pending, accepted, expired, cancelled
+  invitedBy: varchar('invited_by', { length: 36 }).references(() => users.id),
+  expiresAt: timestamp('expires_at').notNull(),
+  acceptedAt: timestamp('accepted_at'),
+  createdAt: timestamp('created_at').notNull().default(new Date()),
+  updatedAt: timestamp('updated_at').notNull().default(new Date()),
+})

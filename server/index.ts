@@ -11,6 +11,7 @@ import { logger } from './logger'
 import { requestLogger, errorLogger } from './middleware/logging'
 import { healthCheck, simpleHealthCheck } from './health'
 import { createRedisClient, createRateLimiter, closeRedis } from './redis'
+import { backgroundJobScheduler } from './jobs/cleanup'
 
 const app = express()
 
@@ -20,6 +21,9 @@ createRedisClient().catch((error) => {
     error: error instanceof Error ? error.message : 'Unknown error' 
   })
 })
+
+// Start background job scheduler
+backgroundJobScheduler.start()
 
 // Trust reverse proxy (Render, etc.)
 app.set('trust proxy', 1)
@@ -88,6 +92,7 @@ process.on('SIGTERM', async () => {
   logger.info('SIGTERM signal received: closing HTTP server')
   server.close(async () => {
     logger.info('HTTP server closed')
+    backgroundJobScheduler.stop()
     await closeRedis()
     process.exit(0)
   })
@@ -97,6 +102,7 @@ process.on('SIGINT', async () => {
   logger.info('SIGINT signal received: closing HTTP server')
   server.close(async () => {
     logger.info('HTTP server closed')
+    backgroundJobScheduler.stop()
     await closeRedis()
     process.exit(0)
   })
