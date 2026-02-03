@@ -10,6 +10,7 @@ import connectPgSimple from 'connect-pg-simple'
 import { pool } from './db'
 import { logger } from './logger'
 import { requestLogger, errorLogger } from './middleware/logging'
+import { healthCheck, simpleHealthCheck } from './health'
 
 const app = express()
 
@@ -56,10 +57,9 @@ app.use(
 app.use('/api/contracts', contractsRouter)
 app.use('/api/auth', authRouter)
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' })
-})
+// Health check endpoints
+app.get('/api/health', healthCheck)
+app.get('/health', simpleHealthCheck) // For load balancers
 
 // Error logging middleware (must be last)
 app.use(errorLogger)

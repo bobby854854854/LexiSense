@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { logger } from '../logger'
+import { incrementRequestStats } from '../health'
 
 /**
  * Express middleware for logging HTTP requests
@@ -10,6 +11,11 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
   // Log when response finishes
   res.on('finish', () => {
     const duration = Date.now() - startTime
+    const success = res.statusCode < 400
+    
+    // Update request statistics
+    incrementRequestStats(success)
+    
     const logData = {
       method: req.method,
       url: req.url,
