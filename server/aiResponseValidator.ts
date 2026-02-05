@@ -1,0 +1,1 @@
+export const validateAIResponse = (response: any) => response;

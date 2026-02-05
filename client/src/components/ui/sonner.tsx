@@ -1,0 +1,1 @@
+export const Toaster = () => <div>Toaster</div>;

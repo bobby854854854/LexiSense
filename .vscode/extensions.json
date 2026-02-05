@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "bradlc.vscode-tailwindcss",
+    "dbaeumer.vscode-eslint",
+    "drizzle-team.drizzle-vscode-plugin",
+    "eamodio.gitlens",
+    "esbenp.prettier-vscode",
+    "github.vscode-pull-request-github",
+    "marcovr.actions-shell-scripts",
+    "ms-vscode.vscode-typescript-next",
+    "vitest.explorer",
+    "yoavbls.pretty-ts-errors"
+  ]
+}
