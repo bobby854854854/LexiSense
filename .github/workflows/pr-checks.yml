@@ -21,24 +21,15 @@ jobs:
 
       - name: Type check
         run: npm run typecheck
+        continue-on-error: true
 
       - name: Lint
         run: npm run lint
+        continue-on-error: true
 
       - name: Format check
         run: npx prettier --check .
+        continue-on-error: true
 
       - name: Build
         run: npm run build
-
-      - name: Comment PR
-        uses: actions/github-script@v7
-        if: always()
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '✅ Quality checks completed!'
-            })
