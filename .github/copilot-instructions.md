@@ -342,6 +342,7 @@ npm run build
 ---
 
 For more details, see:
+
 - `DEPLOYMENT.md`: Production deployment guide
 - `design_guidelines.md`: UI/UX design system
 - `.env.example`: Full list of environment variables
