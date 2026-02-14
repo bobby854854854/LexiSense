@@ -55,8 +55,9 @@ LexiSense/
 
 - **Frontend**: Can be deployed to Vercel (static build from `client/`)
 - **Backend**: Can be deployed to Render/Railway as a Node.js service
-- In **production**, frontend calls backend via `VITE_API_URL` environment variable
-- In **development**, Vite proxies `/api/*` requests to `localhost:5000`
+- In **production**, the canonical client (`client/src/api.ts`) uses a same-origin `/api/*` base; the backend typically serves both the API and the static frontend from the same origin
+- `VITE_API_URL` is optional and only needed for non-standard setups (e.g. hosting frontend and backend on different domains, Storybook, or E2E tools that talk directly to the API); the main browser client does not rely on it by default
+- In **development**, Vite proxies `/api/*` requests to `http://localhost:5000` so the client can continue using the same `/api` base
 
 ---
 
@@ -96,9 +97,9 @@ npm run db:push             # Push schema to database
 npm run dev
 ```
 
-This runs the Express server on port 5000 with `tsx watch` (hot reload). The frontend must be run separately if needed, or access the server's static file serving.
+This runs the Express server with `tsx watch` (hot reload). The server listens on the port specified in `.env` (default: port 3000, but `.env.example` sets `PORT=5000`).
 
-**Note:** The default `dev` command only runs the backend. To run Vite dev server for the frontend, you may need to run `cd client && npx vite` in a separate terminal (port 3000), which will proxy API requests to the backend.
+**Note:** The default `dev` command only runs the backend. To run the Vite dev server for the frontend with the correct root, port 3000, and `/api` proxy, run `npx vite` from the repository root in a separate terminal, which will use the root-level `vite.config.ts`.
 
 ### Building for Production
 
@@ -175,7 +176,7 @@ npm run typecheck          # or npm run check
 **Optional:**
 
 - `REDIS_URL`: For distributed rate limiting (fallback to in-memory)
-- `PORT`: Server port (default: 5000)
+- `PORT`: Server port (default: 3000; `.env.example` uses 5000 for local dev to align with the Vite proxy)
 - `NODE_ENV`: Set automatically by scripts
 - `LOG_LEVEL`, `LOG_DIR`: Logging configuration
 
@@ -257,13 +258,12 @@ npm run build
 **Entry Point**: `server/index.ts`
 
 - Express app setup
-- Middleware: helmet, CORS, rate limiting, session, CSRF protection
+- Middleware: helmet, rate limiting, session
 - Route registration: `/api/auth`, `/api/contracts`, etc.
-- Serves static files from `dist/client` in production
 
 **API Routes**: `server/api/*.ts`
 
-- Modular route handlers (e.g., `contracts.ts`, `auth.ts`, `teams.ts`)
+- Modular route handlers (e.g., `contracts.ts`, `auth.ts`, `team.ts`)
 - Use `isAuthenticated` middleware for protected routes
 - Always filter data by `req.user.id` for security
 
