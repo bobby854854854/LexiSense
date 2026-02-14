@@ -1,20 +1,15 @@
-<<<<<<< HEAD
-import winston from 'winston'
-import path from 'path'
-import fs from 'fs'
+import winston from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
+import path from 'path';
+import fs from 'fs';
 
 // Ensure logs directory exists
-const logDir = process.env.LOG_DIR || './logs'
+const logDir = process.env.LOG_DIR || './logs';
 if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir, { recursive: true })
+  fs.mkdirSync(logDir, { recursive: true });
 }
 
 // Custom format for structured logging
-=======
-import winston from 'winston';
-import DailyRotateFile from 'winston-daily-rotate-file';
-
->>>>>>> 93bd3b4 (Add real AWS S3 storage + Winston logger)
 const logFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.json()
@@ -23,9 +18,20 @@ const logFormat = winston.format.combine(
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   format: logFormat,
-<<<<<<< HEAD
   defaultMeta: { service: 'lexisense' },
   transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      ),
+    }),
+    new DailyRotateFile({
+      filename: path.join(logDir, 'app-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      maxSize: '10m',
+      maxFiles: '14d',
+    }),
     // Error logs
     new winston.transports.File({
       filename: path.join(logDir, 'error.log'),
@@ -33,33 +39,8 @@ export const logger = winston.createLogger({
       maxsize: 5242880, // 5MB
       maxFiles: 5,
     }),
-    // Combined logs
-    new winston.transports.File({
-      filename: path.join(logDir, 'combined.log'),
-      maxsize: 5242880, // 5MB
-      maxFiles: 5,
-    }),
-    // Audit trail
-    new winston.transports.File({
-      filename: path.join(logDir, 'audit.log'),
-      level: 'info',
-      maxsize: 10485760, // 10MB
-      maxFiles: 10,
-    }),
   ],
-})
-
-// Console logging for development
-if (process.env.NODE_ENV !== 'production' && !process.env.SILENT_LOGS) {
-  logger.add(
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
-    })
-  )
-}
+});
 
 // Audit trail helper
 export const auditLog = (action: string, userId?: string, details?: any) => {
@@ -70,23 +51,7 @@ export const auditLog = (action: string, userId?: string, details?: any) => {
     details,
     ip: details?.ip,
     userAgent: details?.userAgent,
-  })
-}
-
-export default logger
-=======
-  transports: [
-    new winston.transports.Console(),
-    new DailyRotateFile({
-      filename: 'logs/app-%DATE%.log',
-      datePattern: 'YYYY-MM-DD',
-      maxSize: '10m',
-      maxFiles: '14d',
-    }),
-  ],
-});
-
-export const auditLog = (event: string, metadata: Record<string, any>) => {
-  logger.warn('AUDIT', { event, ...metadata });
+  });
 };
->>>>>>> 93bd3b4 (Add real AWS S3 storage + Winston logger)
+
+export default logger;
