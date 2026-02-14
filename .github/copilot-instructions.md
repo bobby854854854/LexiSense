@@ -1,227 +1,348 @@
 # LexiSense Copilot Instructions
 
-## Project Overview
+Welcome! This document will help you quickly understand and work effectively in the LexiSense repository. Always trust these instructions first; only search the repo if something seems missing or fails.
 
-**LexiSense** is an AI-powered Contract Lifecycle Management (CLM) platform using React + Express + PostgreSQL. It analyzes contracts using OpenAI GPT-4, stores them in a database, and provides legal insights to users.
+---
 
-## Architecture Quick Reference
+## 1. HighLevelDetails
+
+### What is LexiSense?
+
+**LexiSense** is an enterprise AI-powered Contract Lifecycle Management (CLM) SaaS platform. It helps legal teams analyze, manage, and collaborate on contracts using AI-powered insights.
 
 ### Tech Stack
 
-- **Frontend**: React 18 + TypeScript + Vite
-- **Backend**: Express.js (ES modules) + Node.js
-- **Database**: PostgreSQL + Drizzle ORM
-- **UI**: shadcn/ui (Radix UI components) + Tailwind CSS
-- **AI**: OpenAI GPT-4 (gpt-4o model)
-- **Auth**: Session-based with bcrypt + express-session
+- **Frontend**: React 18, TypeScript, Vite
+- **UI Framework**: Radix UI (shadcn/ui components), Tailwind CSS
+- **Routing**: Wouter (lightweight React router)
+- **State Management**: React Query (@tanstack/react-query), React Context
+- **Backend** (in repo): Express.js, Node.js, TypeScript (ES modules)
+- **Database**: PostgreSQL (Neon serverless) with Drizzle ORM
+- **AI**: OpenAI GPT-4 for contract analysis
+- **File Storage**: AWS S3
+- **Auth**: Session-based (bcrypt + express-session)
 
-### Code Organization
+### Repository Structure
+
+This is a **monorepo** containing both frontend and backend:
 
 ```
-client/src/         → React app (entry: main.tsx)
-  ├─ pages/        → Page components (contracts, dashboard, login)
-  ├─ components/   → Reusable React components
-  │   └─ ui/       → shadcn/ui components (auto-generated)
-  ├─ contexts/     → React context (AuthContext for auth state)
-  ├─ hooks/        → Custom hooks (use-mobile, use-toast)
-  └─ api.ts        → HTTP client using fetch
-server/            → Express API (entry: index.ts)
-  ├─ api/         → Router modules (contracts.ts, auth.ts)
-  ├─ index.ts     → Express setup, middleware, route registration
-  ├─ db.ts        → Drizzle ORM client & connection pool
-  ├─ db/schema.ts → Table definitions (users, contracts)
-  ├─ ai.ts        → OpenAI contract analysis logic
-  └─ auth.ts      → Authentication middleware
-shared/            → Shared types & schemas
-  └─ types.ts     → TypeScript interfaces used by both client & server
+LexiSense/
+├── client/                 # React frontend application
+│   ├── src/
+│   │   ├── main.tsx       # Entry point
+│   │   ├── App.tsx        # Router & app shell
+│   │   ├── pages/         # Page components
+│   │   ├── components/    # Reusable components
+│   │   │   └── ui/        # shadcn/ui components (auto-generated)
+│   │   ├── contexts/      # React contexts (AuthContext, etc.)
+│   │   ├── hooks/         # Custom hooks
+│   │   └── api.ts         # API client (fetch wrappers)
+│   └── index.html         # HTML entry point
+├── server/                 # Express backend API
+│   ├── index.ts           # Express setup & route registration
+│   ├── api/               # API route handlers
+│   ├── db/                # Database schema & migrations
+│   ├── ai.ts              # OpenAI integration
+│   └── auth.ts            # Authentication middleware
+├── shared/                 # Shared TypeScript types
+│   └── types.ts           # Interfaces used by client & server
+├── .github/workflows/      # CI/CD pipelines
+└── [config files]          # Root-level configs
 ```
 
-## Critical Data Flows
+### Deployment Model
 
-### Contract Upload & Analysis
+- **Frontend**: Can be deployed to Vercel (static build from `client/`)
+- **Backend**: Can be deployed to Render/Railway as a Node.js service
+- In **production**, frontend calls backend via `VITE_API_URL` environment variable
+- In **development**, Vite proxies `/api/*` requests to `localhost:5000`
 
-1. User uploads file → `POST /api/contracts/upload`
-2. Server extracts text, saves contract record with `status: "processing"`
-3. `analyzeContract()` calls OpenAI GPT-4 with contract text
-4. AI returns JSON with `summary`, `parties`, `keyDates`, `highLevelRisks`
-5. Results stored in `contracts.aiInsights` (jsonb field)
-6. Update status to `"completed"`
+---
 
-### Authentication
+## 2. BuildInstructions
 
-- Session stored in PostgreSQL via `connect-pg-simple`
-- Passwords hashed with bcrypt (10 salt rounds)
-- Protected routes require `isAuthenticated` middleware
-- `AuthContext` reads session from server on app load
+### Prerequisites
 
-### Type Flow
-
-- Shared interfaces in [shared/types.ts](shared/types.ts) used by both client & server
-- Database schema in [server/db/schema.ts](server/db/schema.ts) defined with Drizzle
-- API responses must match `Contract` interface
-- Field names: use `camelCase` in TypeScript, database stores `snake_case`
-
-## Build & Development Workflow
+- **Node.js**: v20.17 or higher
+- **Package Manager**: npm (or pnpm/yarn)
+- **PostgreSQL**: Neon/local instance (connection string in `.env`)
 
 ### First-Time Setup
 
-```powershell
+**Always run `npm install` at the repo root before any other commands:**
+
+```bash
 npm install
-npm run env:check          # Verify OPENAI_API_KEY, DATABASE_URL
-npm run db:setup           # Initialize database schema (requires .env)
-npm run dev                # Start server + Vite dev server
 ```
 
-### Required Environment Variables
+**Set up environment variables:**
 
-```
-OPENAI_API_KEY=sk-...      # OpenAI API key (required for AI features)
-DATABASE_URL=postgresql://... # Neon/Postgres connection string
-NODE_ENV=development       # Set by npm scripts automatically
-SESSION_SECRET=dev-secret  # For session signing (use process.env fallback)
-```
+1. Copy `.env.example` to `.env`
+2. Fill in required values (see Environment Variables section below)
 
-### Build Process
+**Initialize the database:**
 
-- **Development**: `npm run dev` → tsx runs server, Vite serves client
-- **Production**: `npm run build` → Vite builds client to `dist/client`, esbuild bundles server to `dist/index.js`
-- **Proxy**: Vite proxies `/api/*` requests to `http://localhost:3000` during dev
-
-### Running Tests & Linting
-
-```powershell
-npm run test       # Vitest (no tests added yet)
-npm run lint       # ESLint + TypeScript checks
-npm run format     # Prettier formatting
-npm run typecheck  # TypeScript without emitting
+```bash
+npm run check-env           # Verify environment variables
+npm run db:push             # Push schema to database
 ```
 
-## Key Implementation Patterns
+### Development Workflow
 
-### API Client Pattern
+**Start the development server:**
 
-[client/src/api.ts](client/src/api.ts) uses simple fetch with error handling:
-
-```typescript
-export async function getContracts(): Promise<Contract[]> {
-  const response = await fetch('/api/contracts')
-  if (!response.ok) throw new Error('Failed to fetch')
-  return response.json()
-}
+```bash
+npm run dev
 ```
 
-- No custom fetch wrappers; plain fetch for simplicity
-- Type responses with shared `Contract` interface
+This runs the Express server on port 5000 with `tsx watch` (hot reload). The frontend must be run separately if needed, or access the server's static file serving.
 
-### React Route Structure
+**Note:** The default `dev` command only runs the backend. To run Vite dev server for the frontend, you may need to run `cd client && npx vite` in a separate terminal (port 3000), which will proxy API requests to the backend.
 
-[client/src/App.tsx](client/src/App.tsx) uses `wouter` for routing:
+### Building for Production
 
-- Protected routes wrap components with `<ProtectedRoute>`
-- Public routes: `/`, `/login`
-- Protected routes: `/dashboard`, `/contracts/:id`
-- `MainLayout` wraps dashboard & contract views
+**Build the client (frontend):**
 
-### Database Query Pattern
-
-[server/api/contracts.ts](server/api/contracts.ts) uses Drizzle query builder:
-
-```typescript
-const userContracts = await db.query.contracts.findMany({
-  where: eq(contracts.userId, req.user.id),
-  orderBy: (contracts, { desc }) => [desc(contracts.createdAt)],
-})
+```bash
+npm run build              # or npm run build:client
 ```
 
-- Always filter by `userId` for security
-- Use `findMany` for lists, `findFirst` for single records
+Output: `dist/client/` directory with static files for deployment.
 
-### AI Analysis Pattern
+**Build the server (backend):**
 
-[server/ai.ts](server/ai.ts) enforces JSON response:
+```bash
+npm run build:server
+```
 
-- Uses `response_format: { type: 'json_object' }` for structured output
-- Prompt defines exact JSON schema (summary, parties, keyDates, risks)
-- Parse `response.choices[0].message.content` and validate before storing
-- Temperature set to 0.2 for consistency
+Output: Compiled TypeScript to JavaScript (if needed; note: current setup uses `tsx` for runtime execution).
 
-### Component Pattern
+**Run production server:**
 
-- Functional components with TypeScript props interface
-- shadcn/ui components imported from `@/components/ui/*`
-- Use `useToast()` hook for notifications
-- Use `useAuth()` for auth state in components
+```bash
+npm start
+```
 
-## Important Conventions
+Runs the server with `NODE_ENV=production` using `tsx`.
 
-### Naming
+### Testing
 
-- Database fields: `snake_case` (e.g., `first_name`, `created_at`)
-- TypeScript/JS: `camelCase` (e.g., `firstName`, `createdAt`)
-- Use consistent field names across schema, types, and API responses
+**Run tests:**
 
-### Security
+```bash
+npm test                   # Run tests once (Vitest)
+npm run test:watch         # Watch mode
+```
 
-- Rate limiting: 100 requests per 15 minutes per IP (via express-rate-limit)
-- Helmet.js for security headers
-- CSRF protection via csurf (check if implemented in routes)
-- Input sanitization with DOMPurify for client-side
-- All API endpoints require authentication except `/`, `/login`, `/api/auth/*`
-- Multer file uploads limited to 10MB; stored in memory only (no disk)
+**Note:** The test suite is currently minimal. Don't waste time searching for comprehensive tests; focus on writing new tests if needed for your changes.
 
-### Error Handling
+### Linting & Formatting
 
-- Server: return `{ message: "error description" }` with appropriate HTTP status
-- Client: API functions throw errors; components use error boundaries
-- Avoid generic "An error occurred" messages; be specific
+**Lint the codebase:**
 
-### Type Safety
+```bash
+npm run lint               # ESLint
+```
 
-- No `as any` type casts; use proper interfaces
-- Shared types between client & server via `@shared/*` imports
-- Database schema auto-generates types (check Drizzle docs if needed)
+**Format code:**
 
-## Files to Know
+```bash
+npm run format             # Prettier
+```
 
-**Critical for understanding architecture:**
+**Type checking:**
 
-- [server/index.ts](server/index.ts) - Express app setup & middleware
-- [server/db/schema.ts](server/db/schema.ts) - Database table definitions
-- [client/src/App.tsx](client/src/App.tsx) - Router & page structure
-- [server/api/contracts.ts](server/api/contracts.ts) - Contract API endpoints
-- [server/ai.ts](server/ai.ts) - AI analysis implementation
-- [shared/types.ts](shared/types.ts) - Shared TypeScript interfaces
+```bash
+npm run typecheck          # or npm run check
+```
 
-**Design & UI:**
+**Pre-commit hooks**: Husky is configured to run lint-staged on commit.
 
-- [design_guidelines.md](design_guidelines.md) - Color palette, typography, spacing
-- [components.json](components.json) - shadcn/ui configuration
+**Always prefer using the above package.json scripts over ad-hoc commands.**
 
-## Common Tasks
+### Environment Variables
 
-**Add a new API endpoint:**
+**Required for development** (add to `.env` file, never commit):
 
-1. Create handler in `server/api/*.ts` or extend existing
-2. Use `isAuthenticated` middleware + userId from `req.user.id`
-3. Add matching fetch function in `client/src/api.ts`
-4. Add route registration in `server/index.ts`
-5. Add types to `shared/types.ts`
+- `DATABASE_URL`: PostgreSQL connection string (e.g., from Neon)
+- `SESSION_SECRET`: Secret key for session signing (32+ characters)
+- `OPENAI_API_KEY`: OpenAI API key (for contract analysis)
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET_NAME`: AWS S3 credentials
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`: Email configuration (or use `RESEND_API_KEY`)
+- `APP_URL`: Application URL (for email invites)
 
-**Add a new React page:**
+**Optional:**
 
-1. Create component in `client/src/pages/PageName.tsx`
-2. Add route in `client/src/App.tsx` (wrap with `ProtectedRoute` if needed)
+- `REDIS_URL`: For distributed rate limiting (fallback to in-memory)
+- `PORT`: Server port (default: 5000)
+- `NODE_ENV`: Set automatically by scripts
+- `LOG_LEVEL`, `LOG_DIR`: Logging configuration
+
+**Client environment variables** (for Vite, prefix with `VITE_`):
+
+- `VITE_API_URL`: Backend API URL (defaults to Render-hosted API in production)
+
+### CI/CD Workflows
+
+**GitHub Actions** (`.github/workflows/`):
+
+- `ci.yml`: Runs on push/PR to main - executes tests, typecheck, build
+- `ci-cd.yml`, `deploy.yml`, `pr-checks.yml`: Additional automation
+
+**Commands run in CI:**
+
+```bash
+npm install
+npm run typecheck
+npm test
+npm run build
+```
+
+**To mirror CI locally**, run these commands in sequence.
+
+---
+
+## 3. ProjectLayout
+
+### Frontend Architecture
+
+**Entry Point**: `client/src/main.tsx`
+
+- Renders `<App />` into the DOM
+- Wraps app with providers: `<AuthProvider>`, `<QueryClientProvider>`, `<Toaster>`
+
+**App Shell**: `client/src/App.tsx`
+
+- Defines routes using `wouter`
+- Public routes: `/` (landing), `/login`
+- Protected routes: `/dashboard`, `/contracts/:id`, etc.
+- Uses `<ProtectedRoute>` wrapper for authenticated routes
+- `<MainLayout>` provides consistent layout for dashboard pages
+
+**Pages**: `client/src/pages/*.tsx`
+
+- Each page is a React component (e.g., `Dashboard.tsx`, `ContractDetail.tsx`, `Login.tsx`)
+- Use React Query hooks for data fetching
+- Call API functions from `client/src/api.ts`
+
+**Components**: `client/src/components/*.tsx`
+
+- Reusable React components
+- `ui/` subdirectory contains shadcn/ui components (auto-generated via CLI)
+- Import UI components as `@/components/ui/*`
+
+**API Client**: `client/src/api.ts`
+
+- Simple fetch wrappers with error handling
+- Type responses with shared interfaces from `@shared/types`
+- Example: `getContracts()`, `uploadContract(file)`
+
+**Contexts**: `client/src/contexts/*.tsx`
+
+- `AuthContext.tsx`: Manages authentication state (login, logout, current user)
+- Access via `useAuth()` hook
+
+**Hooks**: `client/src/hooks/*.ts`
+
+- Custom hooks (e.g., `use-mobile.ts`, `use-toast.ts`)
+
+**Styling**: `client/src/index.css`
+
+- Global styles and Tailwind directives
+- Theme configuration: `tailwind.config.js`, `client/src/theme.ts` (if exists)
+
+### Backend Architecture
+
+**Entry Point**: `server/index.ts`
+
+- Express app setup
+- Middleware: helmet, CORS, rate limiting, session, CSRF protection
+- Route registration: `/api/auth`, `/api/contracts`, etc.
+- Serves static files from `dist/client` in production
+
+**API Routes**: `server/api/*.ts`
+
+- Modular route handlers (e.g., `contracts.ts`, `auth.ts`, `teams.ts`)
+- Use `isAuthenticated` middleware for protected routes
+- Always filter data by `req.user.id` for security
+
+**Database**: `server/db/`
+
+- `schema.ts`: Drizzle ORM table definitions (users, contracts, teams, etc.)
+- `migrate.ts`: Migration runner
+- `server/db.ts`: Database connection (Neon serverless)
+- Use Drizzle query builder: `db.query.contracts.findMany()`
+
+**AI Integration**: `server/ai.ts`
+
+- OpenAI GPT-4 integration for contract analysis
+- Returns structured JSON: `{ summary, parties, keyDates, highLevelRisks }`
+- Temperature: 0.2 for consistency
+
+**Authentication**: `server/auth.ts`
+
+- `isAuthenticated` middleware
+- Session-based auth with PostgreSQL session store
+- Passwords hashed with bcrypt (10 rounds)
+
+### Shared Types
+
+**Shared Types**: `shared/types.ts`
+
+- TypeScript interfaces used by both client and server
+- Import as `@shared/types` (via TypeScript path alias)
+- Key types: `User`, `Contract`, `Team`, `Invitation`
+
+### Configuration Files
+
+- `vite.config.ts`: Vite configuration (root: `client/`, output: `dist/client`, proxy: `/api` → `localhost:5000`)
+- `tsconfig.json`: Root TypeScript config (client-focused)
+- `tsconfig.server.json`: Server-specific TypeScript config
+- `eslint.config.js`: ESLint rules (TypeScript, React, Prettier)
+- `tailwind.config.js`: Tailwind CSS configuration
+- `components.json`: shadcn/ui CLI configuration
+- `design_guidelines.md`: Color palette, typography, spacing guidelines
+
+### Adding New Features
+
+**To add a new page:**
+
+1. Create `client/src/pages/NewPage.tsx`
+2. Add route in `client/src/App.tsx` (use `<ProtectedRoute>` if auth required)
 3. Import UI components from `@/components/ui/*`
 4. Call API functions from `@/api.ts`
 
-**Debug database issues:**
+**To add a new API endpoint:**
 
-1. Check `DATABASE_URL` in `.env`
-2. Run `npm run db:setup` to initialize schema
-3. Use Drizzle Studio (if available) or direct Postgres queries to inspect tables
+1. Create or extend handler in `server/api/*.ts`
+2. Use `isAuthenticated` middleware + `req.user.id`
+3. Add matching fetch function in `client/src/api.ts`
+4. Register route in `server/index.ts`
+5. Add types to `shared/types.ts`
 
-## Known Issues & TODOs
+**To add a new UI component:**
 
-- Authentication middleware is stubbed (check [server/auth.ts](server/auth.ts))
-- No comprehensive test suite yet
-- AI response validation could be more robust (consider JSON schema validation library)
+1. Use shadcn/ui CLI: `npx shadcn@latest add <component-name>`
+2. Or create custom component in `client/src/components/`
+3. Follow existing patterns (TypeScript props interface, Tailwind styling)
+
+---
+
+## General Guidance
+
+- **Reuse existing patterns**: Use existing hooks, components, and abstractions before creating new ones
+- **Follow TypeScript conventions**: Use `camelCase` for TS/JS, `snake_case` for database fields
+- **Security**: Always filter by `userId`, validate inputs, use CSRF tokens
+- **Error handling**: Throw descriptive errors in API functions, handle in components with error boundaries
+- **Don't modify CI/build/architecture** unless explicitly requested
+- **Consult design_guidelines.md** for styling decisions
+- **Run linters and tests** before committing changes
+
+---
+
+For more details, see:
+
+- `DEPLOYMENT.md`: Production deployment guide
+- `design_guidelines.md`: UI/UX design system
+- `.env.example`: Full list of environment variables
