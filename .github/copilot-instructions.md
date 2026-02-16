@@ -333,7 +333,7 @@ npm run build
 
 - **Reuse existing patterns**: Use existing hooks, components, and abstractions before creating new ones
 - **Follow TypeScript conventions**: Use `camelCase` for TS/JS, `snake_case` for database fields
-- **Security**: Always filter by `userId`, validate inputs, use CSRF tokens
+- **Security**: Always filter by `userId` and validate all inputs; follow OWASP best practices for session and request security
 - **Error handling**: Throw descriptive errors in API functions, handle in components with error boundaries
 - **Don't modify CI/build/architecture** unless explicitly requested
 - **Consult design_guidelines.md** for styling decisions
