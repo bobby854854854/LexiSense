@@ -212,11 +212,12 @@ npm run build
 **Entry Point**: `client/src/main.tsx`
 
 - Renders `<App />` into the DOM
-- Wraps app with providers: `<AuthProvider>`, `<QueryClientProvider>`, `<Toaster>`
+- Wraps app with providers: `<QueryClientProvider>`, `<ThemeProvider>`, `<AuthProvider>`, `<BrowserRouter>`
 
 **App Shell**: `client/src/App.tsx`
 
 - Defines routes using `wouter`
+- Renders `<Toaster>` for notifications
 - Public routes: `/login`
 - Protected routes: `/` (dashboard), `/contracts/:id`, etc.
 - Uses `<ProtectedRoute>` wrapper for authenticated routes
