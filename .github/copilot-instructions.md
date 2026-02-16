@@ -182,7 +182,7 @@ npm run typecheck          # or npm run check
 
 **Client environment variables** (for Vite, prefix with `VITE_`):
 
-- `VITE_API_URL`: Backend API URL (defaults to Render-hosted API in production)
+- `VITE_API_URL`: Optional backend API base URL. The client API wrapper currently uses a relative `/api` base path; in production you must either configure a reverse proxy to route `/api` to the backend or update the client to read this variable.
 
 ### CI/CD Workflows
 
