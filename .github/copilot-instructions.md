@@ -53,11 +53,12 @@ LexiSense/
 
 ### Deployment Model
 
-- **Frontend**: Can be deployed to Vercel (static build from `client/`)
-- **Backend**: Can be deployed to Render/Railway as a Node.js service
-- In **production**, the canonical client (`client/src/api.ts`) uses a same-origin `/api/*` base; the backend typically serves both the API and the static frontend from the same origin
-- `VITE_API_URL` is optional and only needed for non-standard setups (e.g. hosting frontend and backend on different domains, Storybook, or E2E tools that talk directly to the API); the main browser client does not rely on it by default
-- In **development**, Vite proxies `/api/*` requests to `http://localhost:5000` so the client can continue using the same `/api` base
+- **Frontend**: Typically deployed to Vercel (or any static host) from the `client/` build output
+- **Backend**: Typically deployed separately to Render/Railway (or another Node.js host) as an Express API service
+- In **production (as this repo is configured)**, frontend and backend are on **separate origins**; the backend does **not** serve the built frontend, and there is no built-in reverse proxy or `/api` rewrite configuration in this repository
+- For this default multi-origin setup, the browser client **must** use an absolute API base URL via `VITE_API_URL` (for example, `https://api.example.com`) so requests reach the correct backend origin
+- `VITE_API_URL` is only truly optional if you add your own same-origin setup (e.g. serve `dist/client` from the backend and/or configure an external reverse proxy so `/api/*` on the frontend origin forwards to the backend); that infrastructure is **not** provided by this repo and must be documented and maintained externally
+- In **development**, Vite is configured to proxy `/api/*` requests to `http://localhost:5000`, so the client can continue using the same `/api` base while running the backend on a separate port locally
 
 ---
 
