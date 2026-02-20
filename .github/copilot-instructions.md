@@ -13,7 +13,7 @@ Welcome! This document will help you quickly understand and work effectively in 
 ### Tech Stack
 
 - **Frontend**: React 18, TypeScript, Vite
-- **UI Framework**: Radix UI (shadcn/ui components), Tailwind CSS
+- **UI Framework**: Radix UI (shadcn/ui components), Tailwind CSS (with some legacy views still using Material UI / @mui\* during migration)
 - **Routing**: Wouter (lightweight React router)
 - **State Management**: React Query (@tanstack/react-query), React Context
 - **Backend** (in repo): Express.js, Node.js, TypeScript (ES modules)
