@@ -44,3 +44,9 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+.qwen/
+gha-creds-*.json
+.github/workflows/qwen-*
+client/.vercel/
+.github/workflows/qwen-*
+client/.vercel/
