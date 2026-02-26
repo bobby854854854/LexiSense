@@ -18,7 +18,7 @@ import {
   Error as ErrorIcon,
 } from '@mui/icons-material';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://lexisense-api.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 interface PricingTier {
   name: string;
