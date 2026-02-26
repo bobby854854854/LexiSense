@@ -1,19 +1,19 @@
-import winston from 'winston';
-import DailyRotateFile from 'winston-daily-rotate-file';
-import path from 'path';
-import fs from 'fs';
+import winston from 'winston'
+import DailyRotateFile from 'winston-daily-rotate-file'
+import path from 'path'
+import fs from 'fs'
 
 // Ensure logs directory exists
-const logDir = process.env.LOG_DIR || './logs';
+const logDir = process.env.LOG_DIR || './logs'
 if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir, { recursive: true });
+  fs.mkdirSync(logDir, { recursive: true })
 }
 
 // Custom format for structured logging
 const logFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.json()
-);
+)
 
 export const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
@@ -39,11 +39,22 @@ export const logger = winston.createLogger({
       maxsize: 5242880, // 5MB
       maxFiles: 5,
     }),
+    // Dedicated audit trail
+    new winston.transports.File({
+      filename: path.join(logDir, 'audit.log'),
+      level: 'info',
+      maxsize: 10485760, // 10MB
+      maxFiles: 10,
+    }),
   ],
-});
+})
 
 // Audit trail helper
-export const auditLog = (action: string, userId?: string, details?: any) => {
+export const auditLog = (
+  action: string,
+  userId?: string,
+  details?: Record<string, unknown>
+) => {
   logger.info('AUDIT', {
     action,
     userId,
@@ -51,7 +62,7 @@ export const auditLog = (action: string, userId?: string, details?: any) => {
     details,
     ip: details?.ip,
     userAgent: details?.userAgent,
-  });
-};
+  })
+}
 
-export default logger;
+export default logger

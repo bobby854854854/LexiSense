@@ -1,6 +1,6 @@
 // client/src/pages/AIPilot/AIPilot.tsx - Chat-style AI Co-pilot
-import React, { useState, useRef, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import React, { useState, useRef, useEffect } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import {
   Box,
   Typography,
@@ -9,74 +9,77 @@ import {
   Button,
   Avatar,
   CircularProgress,
-} from '@mui/material';
+} from '@mui/material'
 import {
   Send as SendIcon,
   Person as PersonIcon,
   Psychology as AiIcon,
-} from '@mui/icons-material';
-import { useAuth } from '../../contexts/AuthContext';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://lexisense-api.onrender.com';
+} from '@mui/icons-material'
+import { useAuth } from '../../contexts/AuthContext'
+import { API_BASE_URL } from '../../constants'
 
 interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: Date
 }
 
 const AIPilot: React.FC = () => {
-  const { accessToken } = useAuth();
+  const { accessToken } = useAuth()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I\'m your LexiSense AI co-pilot. I can help you analyze contracts, answer legal questions, and provide insights on your portfolio. How can I assist you today?',
+      content:
+        "Hello! I'm your LexiSense AI co-pilot. I can help you analyze contracts, answer legal questions, and provide insights on your portfolio. How can I assist you today?",
       timestamp: new Date(),
     },
-  ]);
-  const [inputMessage, setInputMessage] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  ])
+  const [inputMessage, setInputMessage] = useState('')
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    scrollToBottom()
+  }, [messages])
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
-      };
-      
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/ai/chat`, {
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`
+      }
+
+      const response = await fetch(`${API_BASE_URL}/v1/ai/chat`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ message }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error('Failed to get AI response');
+        throw new Error('Failed to get AI response')
       }
 
-      return response.json();
+      return response.json()
     },
     onSuccess: (data) => {
       const aiMessage: Message = {
         id: Date.now().toString() + '-ai',
         role: 'assistant',
-        content: data.response || data.message || 'I apologize, but I couldn\'t generate a response. Please try again.',
+        content:
+          data.response ||
+          data.message ||
+          "I apologize, but I couldn't generate a response. Please try again.",
         timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, aiMessage]);
+      }
+      setMessages((prev) => [...prev, aiMessage])
     },
     onError: (error) => {
       const errorMessage: Message = {
@@ -84,35 +87,41 @@ const AIPilot: React.FC = () => {
         role: 'assistant',
         content: `Error: ${error instanceof Error ? error.message : 'Failed to get AI response'}. Please try again.`,
         timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      }
+      setMessages((prev) => [...prev, errorMessage])
     },
-  });
+  })
 
   const handleSendMessage = () => {
-    if (!inputMessage.trim() || chatMutation.isPending) return;
+    if (!inputMessage.trim() || chatMutation.isPending) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: inputMessage,
       timestamp: new Date(),
-    };
+    }
 
-    setMessages((prev) => [...prev, userMessage]);
-    chatMutation.mutate(inputMessage);
-    setInputMessage('');
-  };
+    setMessages((prev) => [...prev, userMessage])
+    chatMutation.mutate(inputMessage)
+    setInputMessage('')
+  }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+      e.preventDefault()
+      handleSendMessage()
     }
-  };
+  }
 
   return (
-    <Box sx={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{
+        height: 'calc(100vh - 100px)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Box sx={{ mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
           AI Pilot
@@ -147,7 +156,8 @@ const AIPilot: React.FC = () => {
             >
               <Avatar
                 sx={{
-                  bgcolor: message.role === 'user' ? 'primary.main' : 'secondary.main',
+                  bgcolor:
+                    message.role === 'user' ? 'primary.main' : 'secondary.main',
                   width: 40,
                   height: 40,
                 }}
@@ -158,7 +168,8 @@ const AIPilot: React.FC = () => {
                 sx={{
                   p: 2,
                   maxWidth: '70%',
-                  bgcolor: message.role === 'user' ? 'primary.lighter' : 'white',
+                  bgcolor:
+                    message.role === 'user' ? 'primary.lighter' : 'white',
                   boxShadow: 1,
                 }}
               >
@@ -230,14 +241,20 @@ const AIPilot: React.FC = () => {
               minWidth: 100,
               height: 56,
             }}
-            endIcon={chatMutation.isPending ? <CircularProgress size={20} /> : <SendIcon />}
+            endIcon={
+              chatMutation.isPending ? (
+                <CircularProgress size={20} />
+              ) : (
+                <SendIcon />
+              )
+            }
           >
             Send
           </Button>
         </Box>
       </Paper>
     </Box>
-  );
-};
+  )
+}
 
-export default AIPilot;
+export default AIPilot

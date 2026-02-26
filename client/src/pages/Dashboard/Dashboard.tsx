@@ -1,6 +1,6 @@
 // client/src/pages/Dashboard/Dashboard.tsx - AI Portfolio Dashboard
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Box,
   Typography,
@@ -9,13 +9,13 @@ import {
   Grid,
   CircularProgress,
   Alert,
-} from '@mui/material';
+} from '@mui/material'
 import {
   TrendingUp as TrendingUpIcon,
   Warning as WarningIcon,
   AttachMoney as MoneyIcon,
   Schedule as ScheduleIcon,
-} from '@mui/icons-material';
+} from '@mui/icons-material'
 import {
   PieChart,
   Pie,
@@ -23,52 +23,64 @@ import {
   ResponsiveContainer,
   Legend,
   Tooltip,
-} from 'recharts';
-import { useAuth } from '../../contexts/AuthContext';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://lexisense-api.onrender.com';
+} from 'recharts'
+import { useAuth } from '../../contexts/AuthContext'
+import { API_BASE_URL } from '../../constants'
 
 interface DashboardData {
-  totalContracts?: number;
-  atRiskContracts?: number;
-  totalContractValue?: number;
-  expiringSoonCount?: number;
-  riskBreakdown?: Array<{ label: string; value: number; color?: string }>;
+  totalContracts?: number
+  atRiskContracts?: number
+  totalContractValue?: number
+  expiringSoonCount?: number
+  riskBreakdown?: Array<{ label: string; value: number; color?: string }>
 }
 
-const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#6366f1'];
+interface ChartDataItem {
+  label: string
+  value: number
+  color?: string
+}
+
+const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#6366f1']
 
 const Dashboard: React.FC = () => {
-  const { accessToken } = useAuth();
+  const { accessToken } = useAuth()
 
   const { data, isLoading, error } = useQuery<DashboardData>({
     queryKey: ['dashboard'],
     queryFn: async () => {
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
-      };
-      
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/dashboard`, { headers });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch dashboard data');
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`
       }
-      
-      return response.json();
+
+      const response = await fetch(`${API_BASE_URL}/v1/dashboard`, { headers })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data')
+      }
+
+      return response.json()
     },
     retry: 2,
-  });
+  })
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '60vh',
+        }}
+      >
         <CircularProgress size={60} />
       </Box>
-    );
+    )
   }
 
   if (error) {
@@ -78,7 +90,7 @@ const Dashboard: React.FC = () => {
           Failed to load dashboard data. Please try again later.
         </Alert>
       </Box>
-    );
+    )
   }
 
   const kpis = [
@@ -112,14 +124,14 @@ const Dashboard: React.FC = () => {
       color: '#f59e0b',
       bgColor: '#fffbeb',
     },
-  ];
+  ]
 
   const chartData = data?.riskBreakdown || [
     { label: 'Low Risk', value: 45 },
     { label: 'Medium Risk', value: 30 },
     { label: 'High Risk', value: 15 },
     { label: 'Critical', value: 10 },
-  ];
+  ]
 
   return (
     <Box>
@@ -147,12 +159,24 @@ const Dashboard: React.FC = () => {
               }}
             >
               <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                  }}
+                >
                   <Box>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: 'text.secondary', mb: 1 }}
+                    >
                       {kpi.label}
                     </Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: kpi.color }}>
+                    <Typography
+                      variant="h4"
+                      sx={{ fontWeight: 700, color: kpi.color }}
+                    >
                       {kpi.value}
                     </Typography>
                   </Box>
@@ -188,13 +212,18 @@ const Dashboard: React.FC = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry: any) => `${entry.label}: ${entry.value}`}
+                    label={(entry: ChartDataItem) =>
+                      `${entry.label}: ${entry.value}`
+                    }
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {chartData.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={entry.color || COLORS[index % COLORS.length]} />
+                    {chartData.map((entry: ChartDataItem, index: number) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.color || COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -213,13 +242,17 @@ const Dashboard: React.FC = () => {
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Alert severity="success">
-                  <strong>Portfolio Health:</strong> 75% of contracts are low-risk with favorable terms
+                  <strong>Portfolio Health:</strong> 75% of contracts are
+                  low-risk with favorable terms
                 </Alert>
                 <Alert severity="warning">
-                  <strong>Action Required:</strong> {data?.expiringSoonCount || 12} contracts expiring in next 90 days
+                  <strong>Action Required:</strong>{' '}
+                  {data?.expiringSoonCount || 12} contracts expiring in next 90
+                  days
                 </Alert>
                 <Alert severity="info">
-                  <strong>Opportunity:</strong> AI detected potential cost savings of $2.3M through renegotiation
+                  <strong>Opportunity:</strong> AI detected potential cost
+                  savings of $2.3M through renegotiation
                 </Alert>
               </Box>
             </CardContent>
@@ -227,7 +260,7 @@ const Dashboard: React.FC = () => {
         </Grid>
       </Grid>
     </Box>
-  );
-};
+  )
+}
 
-export default Dashboard;
+export default Dashboard

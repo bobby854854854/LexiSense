@@ -1,6 +1,6 @@
 // client/src/components/Navigation.tsx - Enterprise Sidebar
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import {
   Drawer,
   List,
@@ -11,26 +11,25 @@ import {
   Typography,
   Divider,
   Avatar,
-} from '@mui/material';
+} from '@mui/material'
 import {
   Dashboard as DashboardIcon,
   Psychology as PsychologyIcon,
   Description as DescriptionIcon,
   Logout as LogoutIcon,
-} from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
-
-const DRAWER_WIDTH = 260;
+} from '@mui/icons-material'
+import { useAuth } from '../contexts/AuthContext'
+import { DRAWER_WIDTH } from '../constants'
 
 const Navigation: React.FC = () => {
-  const location = useLocation();
-  const { user, logout } = useAuth();
+  const location = useLocation()
+  const { user, logout } = useAuth()
 
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: <DashboardIcon /> },
     { path: '/ai-pilot', label: 'AI Pilot', icon: <PsychologyIcon /> },
     { path: '/contracts', label: 'Contracts', icon: <DescriptionIcon /> },
-  ];
+  ]
 
   return (
     <Drawer
@@ -60,7 +59,10 @@ const Navigation: React.FC = () => {
         >
           LexiSense
         </Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}>
+        <Typography
+          variant="caption"
+          sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+        >
           Enterprise CLM
         </Typography>
       </Box>
@@ -94,12 +96,12 @@ const Navigation: React.FC = () => {
               }}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-              <ListItemText 
-                primary={item.label} 
-                primaryTypographyProps={{ 
+              <ListItemText
+                primary={item.label}
+                primaryTypographyProps={{
                   fontSize: '0.9375rem',
-                  fontWeight: 500 
-                }} 
+                  fontWeight: 500,
+                }}
               />
             </ListItemButton>
           ))}
@@ -126,10 +128,18 @@ const Navigation: React.FC = () => {
             {user?.name?.charAt(0)?.toUpperCase() || 'U'}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.875rem' }} noWrap>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 600, fontSize: '0.875rem' }}
+              noWrap
+            >
               {user?.name || 'User'}
             </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }} noWrap>
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', fontSize: '0.75rem' }}
+              noWrap
+            >
               {user?.email || 'user@example.com'}
             </Typography>
           </Box>
@@ -148,17 +158,17 @@ const Navigation: React.FC = () => {
           <ListItemIcon sx={{ minWidth: 40, color: 'error.main' }}>
             <LogoutIcon />
           </ListItemIcon>
-          <ListItemText 
-            primary="Logout" 
-            primaryTypographyProps={{ 
+          <ListItemText
+            primary="Logout"
+            primaryTypographyProps={{
               fontSize: '0.9375rem',
-              fontWeight: 500 
-            }} 
+              fontWeight: 500,
+            }}
           />
         </ListItemButton>
       </Box>
     </Drawer>
-  );
-};
+  )
+}
 
-export default Navigation;
+export default Navigation

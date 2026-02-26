@@ -1,5 +1,15 @@
 // client/src/theme.ts - LexiSense Enterprise Design System
-import { createTheme } from '@mui/material/styles';
+import { createTheme } from '@mui/material/styles'
+
+// Extend the MUI theme to include 'lighter' color variants
+declare module '@mui/material/styles' {
+  interface PaletteColor {
+    lighter?: string
+  }
+  interface SimplePaletteColorOptions {
+    lighter?: string
+  }
+}
 
 export const theme = createTheme({
   palette: {
@@ -8,18 +18,21 @@ export const theme = createTheme({
       main: '#4f46e5', // Indigo-600 - Enterprise brand color
       light: '#6366f1',
       dark: '#4338ca',
+      lighter: '#eef2ff', // Indigo-50
       contrastText: '#ffffff',
     },
     secondary: {
       main: '#10b981', // Emerald-500 - Success/growth accent
       light: '#34d399',
       dark: '#059669',
+      lighter: '#f0fdf4', // Emerald-50
       contrastText: '#ffffff',
     },
     error: {
       main: '#ef4444', // Red-500
       light: '#f87171',
       dark: '#dc2626',
+      lighter: '#fef2f2', // Red-50
     },
     warning: {
       main: '#f59e0b', // Amber-500
@@ -47,7 +60,8 @@ export const theme = createTheme({
     divider: '#e5e7eb', // Gray-200
   },
   typography: {
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily:
+      '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     h1: {
       fontSize: '3rem',
       fontWeight: 800,
@@ -117,7 +131,8 @@ export const theme = createTheme({
           fontSize: '0.9375rem',
           boxShadow: 'none',
           '&:hover': {
-            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+            boxShadow:
+              '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
           },
         },
         sizeLarge: {
@@ -132,7 +147,8 @@ export const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+          boxShadow:
+            '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
           borderRadius: 12,
         },
       },
@@ -140,13 +156,16 @@ export const theme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+          boxShadow:
+            '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
         },
         elevation1: {
-          boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+          boxShadow:
+            '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
         },
         elevation2: {
-          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+          boxShadow:
+            '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
         },
       },
     },
@@ -160,4 +179,4 @@ export const theme = createTheme({
       },
     },
   },
-});
+})
