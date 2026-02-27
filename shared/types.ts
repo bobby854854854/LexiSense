@@ -15,12 +15,30 @@ export const loginUserSchema = insertUserSchema.pick({
 })
 export type User = typeof users.$inferSelect
 export type AuthenticatedUser = Omit<User, 'passwordHash'>
+export type UserRole = 'admin' | 'member' | 'viewer'
+
+// --- Team ---
+export interface TeamMember {
+  id: string
+  email: string
+  role: UserRole
+  createdAt: Date
+}
+
+export interface InvitationWithCreator {
+  id: string
+  email: string
+  role: UserRole
+  expiresAt: Date
+  inviteUrl?: string
+  creator: {
+    email: string
+  }
+}
 
 // --- Contracts ---
 export type Contract = typeof contractsTable.$inferSelect
-export type AnalysisResults = z.infer<typeof analysisResultsSchema>
 
-// Zod schema for validating the AI analysis results
 export const analysisResultsSchema = z.object({
   summary: z.string(),
   parties: z.array(
@@ -36,3 +54,5 @@ export const analysisResultsSchema = z.object({
   }),
   highLevelRisks: z.array(z.string()),
 })
+
+export type AnalysisResults = z.infer<typeof analysisResultsSchema>
