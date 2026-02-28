@@ -69,7 +69,7 @@ const Contracts: React.FC = () => {
       const sortField = sortModel[0]?.field || 'createdAt'
       const sortOrder = sortModel[0]?.sort || 'desc'
 
-      const url = new URL(`${API_BASE_URL}/v1/contracts`)
+      const url = new URL(`${API_BASE_URL}/v1/contracts`, window.location.origin)
       url.searchParams.set('page', String(paginationModel.page + 1)) // API is 1-indexed
       url.searchParams.set('pageSize', String(paginationModel.pageSize))
       url.searchParams.set('sortBy', sortField)
