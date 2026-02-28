@@ -111,8 +111,11 @@ const Contracts: React.FC = () => {
       width: 150,
       sortable: true,
       valueFormatter: (params: GridValueFormatterParams) => {
-        const value = params.value as number | null
-        return value ? `$${value.toLocaleString()}` : 'N/A'
+        const value = params.value as number | null | undefined
+        if (value === null || value === undefined) {
+          return 'N/A'
+        }
+        return `$${value.toLocaleString()}`
       },
     },
     {
