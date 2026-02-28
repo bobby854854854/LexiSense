@@ -38,7 +38,7 @@ interface ContractsResponse {
 }
 
 const Contracts: React.FC = () => {
-  const { accessToken } = useAuth()
+  const { accessToken, user } = useAuth()
   const [selectionModel, setSelectionModel] = useState<GridRowSelectionModel>(
     []
   )
@@ -53,6 +53,7 @@ const Contracts: React.FC = () => {
   const { data, isLoading, error } = useQuery<ContractsResponse>({
     queryKey: [
       'contracts',
+      user?.id,
       paginationModel.page,
       paginationModel.pageSize,
       sortModel,
@@ -66,30 +67,43 @@ const Contracts: React.FC = () => {
         headers['Authorization'] = `Bearer ${accessToken}`
       }
 
-      const sortField = sortModel[0]?.field || 'createdAt'
-      const sortOrder = sortModel[0]?.sort || 'desc'
-
-      const url = new URL(`${API_BASE_URL}/v1/contracts`, window.location.origin)
-      url.searchParams.set('page', String(paginationModel.page + 1)) // API is 1-indexed
-      url.searchParams.set('pageSize', String(paginationModel.pageSize))
-      url.searchParams.set('sortBy', sortField)
-      url.searchParams.set('sortOrder', sortOrder)
-
-      const response = await fetch(url.toString(), { headers })
+      // Backend endpoint: GET /api/contracts (returns array directly, no pagination)
+      const response = await fetch(`${API_BASE_URL}/contracts`, { headers })
 
       if (!response.ok) {
         throw new Error('Failed to fetch contracts')
       }
 
-      const result = await response.json()
+      const contracts = await response.json()
 
-      // Normalize response format - backend may return data or contracts array
+      // Backend returns simple array - do client-side pagination and sorting
+      const sortField = sortModel[0]?.field || 'createdAt'
+      const sortOrder = sortModel[0]?.sort || 'desc'
+
+      // Sort
+      const sorted = [...contracts].sort((a: Contract, b: Contract) => {
+        const aVal = a[sortField as keyof Contract]
+        const bVal = b[sortField as keyof Contract]
+
+        if (aVal === undefined || aVal === null) return 1
+        if (bVal === undefined || bVal === null) return -1
+
+        const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0
+        return sortOrder === 'asc' ? comparison : -comparison
+      })
+
+      // Paginate
+      const start = paginationModel.page * paginationModel.pageSize
+      const end = start + paginationModel.pageSize
+      const paginated = sorted.slice(start, end)
+
       return {
-        data: result.data || result.contracts || [],
-        total: result.total || result.totalCount || 0,
+        data: paginated,
+        total: sorted.length,
       }
     },
     retry: 2,
+    enabled: !!user, // Only fetch when user is authenticated
   })
 
   const columns: GridColDef[] = [

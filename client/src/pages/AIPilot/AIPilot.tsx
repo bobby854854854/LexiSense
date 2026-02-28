@@ -15,8 +15,6 @@ import {
   Person as PersonIcon,
   Psychology as AiIcon,
 } from '@mui/icons-material'
-import { useAuth } from '../../contexts/AuthContext'
-import { API_BASE_URL } from '../../constants'
 
 interface Message {
   id: string
@@ -26,7 +24,6 @@ interface Message {
 }
 
 const AIPilot: React.FC = () => {
-  const { accessToken } = useAuth()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -49,25 +46,16 @@ const AIPilot: React.FC = () => {
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
+      // TODO: Replace with actual API call when backend implements AI chat endpoint
+      // For now, return mock AI response to demonstrate UI
+      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate network delay
+
+      return {
+        response:
+          "I'm a mock AI assistant. The backend AI chat endpoint will be implemented in a future sprint. For now, I can only echo that you asked: '" +
+          message +
+          "'",
       }
-
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`
-      }
-
-      const response = await fetch(`${API_BASE_URL}/v1/ai/chat`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ message }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to get AI response')
-      }
-
-      return response.json()
     },
     onSuccess: (data) => {
       const aiMessage: Message = {
@@ -224,7 +212,7 @@ const AIPilot: React.FC = () => {
             placeholder="Ask me anything about your contracts..."
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             disabled={chatMutation.isPending}
             variant="outlined"
             sx={{

@@ -1,7 +1,7 @@
 // client/src/components/LandingPage.tsx - Marketing + Health Check
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   Box,
   Container,
@@ -12,19 +12,18 @@ import {
   Grid,
   Chip,
   CircularProgress,
-} from '@mui/material';
+} from '@mui/material'
 import {
   CheckCircle as CheckIcon,
   Error as ErrorIcon,
-} from '@mui/icons-material';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+} from '@mui/icons-material'
+import { API_BASE_URL } from '../constants'
 
 interface PricingTier {
-  name: string;
-  price: string;
-  features: string[];
-  highlighted?: boolean;
+  name: string
+  price: string
+  features: string[]
+  highlighted?: boolean
 }
 
 const pricingTiers: PricingTier[] = [
@@ -65,34 +64,57 @@ const pricingTiers: PricingTier[] = [
       'Unlimited seats',
     ],
   },
-];
+]
 
 const LandingPage: React.FC = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   // Health check query
-  const { data: healthData, isLoading: healthLoading } = useQuery({
+  const {
+    data: healthData,
+    isLoading: healthLoading,
+    error: healthError,
+  } = useQuery({
     queryKey: ['health'],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/health`);
-      if (!response.ok) throw new Error('Health check failed');
-      return response.json();
+      const response = await fetch(`${API_BASE_URL}/health`)
+      if (!response.ok) throw new Error('Health check failed')
+      return response.json()
     },
     retry: 1,
     refetchInterval: 30000, // Refresh every 30 seconds
-  });
+  })
 
   const getHealthStatus = () => {
     if (healthLoading) {
-      return { label: 'Checking...', color: 'default' as const, icon: <CircularProgress size={16} /> };
+      return {
+        label: 'Checking...',
+        color: 'default' as const,
+        icon: <CircularProgress size={16} />,
+      }
+    }
+    if (healthError) {
+      return {
+        label: 'Backend: Offline',
+        color: 'error' as const,
+        icon: <ErrorIcon fontSize="small" />,
+      }
     }
     if (healthData?.status === 'ok' || healthData?.healthy) {
-      return { label: 'Backend: Online', color: 'success' as const, icon: <CheckIcon fontSize="small" /> };
+      return {
+        label: 'Backend: Online',
+        color: 'success' as const,
+        icon: <CheckIcon fontSize="small" />,
+      }
     }
-    return { label: 'Backend: Offline', color: 'error' as const, icon: <ErrorIcon fontSize="small" /> };
-  };
+    return {
+      label: 'Backend: Offline',
+      color: 'error' as const,
+      icon: <ErrorIcon fontSize="small" />,
+    }
+  }
 
-  const healthStatus = getHealthStatus();
+  const healthStatus = getHealthStatus()
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -106,7 +128,13 @@ const LandingPage: React.FC = () => {
         }}
       >
         <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
             <Typography
               variant="h5"
               sx={{
@@ -165,8 +193,9 @@ const LandingPage: React.FC = () => {
                 lineHeight: 1.6,
               }}
             >
-              Transform your contract lifecycle management with enterprise-grade AI. 
-              Reduce risk, accelerate reviews, and unlock insights across your entire portfolio.
+              Transform your contract lifecycle management with enterprise-grade
+              AI. Reduce risk, accelerate reviews, and unlock insights across
+              your entire portfolio.
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
               <Button
@@ -204,7 +233,10 @@ const LandingPage: React.FC = () => {
             <Typography variant="h2" sx={{ fontWeight: 700, mb: 2 }}>
               Enterprise Pricing
             </Typography>
-            <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 400 }}>
+            <Typography
+              variant="h6"
+              sx={{ color: 'text.secondary', fontWeight: 400 }}
+            >
               Choose the plan that scales with your business
             </Typography>
           </Box>
@@ -244,16 +276,32 @@ const LandingPage: React.FC = () => {
                     <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
                       {tier.name}
                     </Typography>
-                    <Typography variant="h3" sx={{ fontWeight: 800, mb: 3, color: 'primary.main' }}>
+                    <Typography
+                      variant="h3"
+                      sx={{ fontWeight: 800, mb: 3, color: 'primary.main' }}
+                    >
                       {tier.price}
-                      <Typography component="span" variant="h6" sx={{ color: 'text.secondary', fontWeight: 400 }}>
+                      <Typography
+                        component="span"
+                        variant="h6"
+                        sx={{ color: 'text.secondary', fontWeight: 400 }}
+                      >
                         /year
                       </Typography>
                     </Typography>
                     <Box sx={{ mb: 3 }}>
                       {tier.features.map((feature, index) => (
-                        <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                          <CheckIcon sx={{ color: 'success.main', mr: 1, fontSize: 20 }} />
+                        <Box
+                          key={index}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            mb: 1.5,
+                          }}
+                        >
+                          <CheckIcon
+                            sx={{ color: 'success.main', mr: 1, fontSize: 20 }}
+                          />
                           <Typography variant="body2">{feature}</Typography>
                         </Box>
                       ))}
@@ -275,15 +323,25 @@ const LandingPage: React.FC = () => {
       </Box>
 
       {/* Footer */}
-      <Box sx={{ py: 4, bgcolor: 'white', borderTop: '1px solid', borderColor: 'divider' }}>
+      <Box
+        sx={{
+          py: 4,
+          bgcolor: 'white',
+          borderTop: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
         <Container maxWidth="lg">
-          <Typography variant="body2" sx={{ textAlign: 'center', color: 'text.secondary' }}>
+          <Typography
+            variant="body2"
+            sx={{ textAlign: 'center', color: 'text.secondary' }}
+          >
             © 2026 LexiSense. Enterprise Contract Lifecycle Management.
           </Typography>
         </Container>
       </Box>
     </Box>
-  );
-};
+  )
+}
 
-export default LandingPage;
+export default LandingPage

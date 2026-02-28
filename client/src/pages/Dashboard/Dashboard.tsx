@@ -25,7 +25,6 @@ import {
   Tooltip,
 } from 'recharts'
 import { useAuth } from '../../contexts/AuthContext'
-import { API_BASE_URL } from '../../constants'
 
 interface DashboardData {
   totalContracts?: number
@@ -44,28 +43,31 @@ interface ChartDataItem {
 const COLORS = ['#10b981', '#f59e0b', '#ef4444', '#6366f1']
 
 const Dashboard: React.FC = () => {
-  const { accessToken } = useAuth()
+  const { user } = useAuth()
 
+  // Mock data for Sprint 1 - backend dashboard endpoint to be implemented in Sprint 2
   const { data, isLoading, error } = useQuery<DashboardData>({
-    queryKey: ['dashboard'],
-    queryFn: async () => {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
+    queryKey: ['dashboard', user?.id],
+    queryFn: async (): Promise<DashboardData> => {
+      // TODO: Replace with actual API call when backend implements /api/dashboard
+      // For now, return mock data to demonstrate UI
+      await new Promise((resolve) => setTimeout(resolve, 500)) // Simulate network delay
+
+      return {
+        totalContracts: 1234,
+        atRiskContracts: 156,
+        totalContractValue: 45200000,
+        expiringSoonCount: 89,
+        riskBreakdown: [
+          { label: 'Low Risk', value: 45, color: '#10b981' },
+          { label: 'Medium Risk', value: 30, color: '#f59e0b' },
+          { label: 'High Risk', value: 15, color: '#ef4444' },
+          { label: 'Critical', value: 10, color: '#dc2626' },
+        ],
       }
-
-      if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`
-      }
-
-      const response = await fetch(`${API_BASE_URL}/v1/dashboard`, { headers })
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch dashboard data')
-      }
-
-      return response.json()
     },
     retry: 2,
+    enabled: !!user, // Only run query when user is authenticated
   })
 
   if (isLoading) {

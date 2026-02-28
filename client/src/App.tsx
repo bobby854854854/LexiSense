@@ -4,7 +4,6 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Box } from '@mui/material'
 import { Toaster } from 'sonner'
 import { useAuth } from './contexts/AuthContext'
-import { DRAWER_WIDTH } from './constants'
 import Navigation from './components/Navigation'
 import LandingPage from './components/LandingPage'
 import Dashboard from './pages/Dashboard/Dashboard'
@@ -35,7 +34,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           flexGrow: 1,
           bgcolor: 'background.default',
           p: 3,
-          marginLeft: `${DRAWER_WIDTH}px`,
+          // No marginLeft needed - permanent Drawer already takes space in flex layout
         }}
       >
         {children}
