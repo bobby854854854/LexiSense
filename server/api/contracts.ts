@@ -4,7 +4,7 @@ import { body, param, validationResult } from 'express-validator'
 import { eq, and, desc } from 'drizzle-orm'
 import { db } from '../db'
 import { contracts } from '../db/schema'
-import { uploadFileToStorage, extractTextFromFile } from '../services/storage'
+import { uploadFileToStorage } from '../services/storage'
 import { analyzeContract, getChatResponse } from '../services/ai'
 import type { Contract } from '@shared/types'
 
