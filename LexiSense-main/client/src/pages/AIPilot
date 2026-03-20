@@ -1,0 +1,78 @@
+
+import React, { useState } from 'react';
+import { 
+  Container, Box, Paper, TextField, Button, Chip, 
+  Typography, Alert 
+} from '@mui/material';
+import { SmartToy, Send, CheckCircle } from '@mui/icons-material';
+
+export default function AIPilot() {
+  const [messages, setMessages] = useState<any[]>([]);
+  const [input, setInput] = useState('');
+
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    
+    setMessages(prev => [...prev, { role: 'user', content: input }]);
+    setMessages(prev => [...prev, { 
+      role: 'assistant', 
+      content: 'AI response: Here is a standard indemnity clause for SaaS providers...',
+      confidence: 0.92,
+      citations: ['clause-lib-indemnity-2024']
+    }]);
+    setInput('');
+  };
+
+  return (
+    <Container maxWidth="xl" sx={{ mt: 4 }}>
+      <Typography variant="h4" sx={{ mb: 4 }}>
+        AI Co-Pilot • Enterprise Elite (Unlimited)
+      </Typography>
+
+      <Paper sx={{ height: 600, borderRadius: 2, overflow: 'hidden' }}>
+        <Box sx={{ height: 'calc(100% - 120px)', p: 3, overflowY: 'auto' }}>
+          {messages.length === 0 ? (
+            <Box textAlign="center" sx={{ mt: 8, color: 'text.secondary' }}>
+              <SmartToy sx={{ fontSize: 64, opacity: 0.3, mb: 2 }} />
+              <Typography>Ask LexiSense AI anything about contracts</Typography>
+            </Box>
+          ) : (
+            messages.map((msg, i) => (
+              <Box key={i} sx={{ mb: 3 }}>
+                <Paper sx={{ 
+                  p: 3, maxWidth: '70%', 
+                  ml: msg.role === 'assistant' ? 0 : 'auto',
+                  mr: msg.role === 'user' ? 0 : 'auto',
+                  background: msg.role === 'user' ? '#4f46e5' : '#ffffff',
+                  color: msg.role === 'user' ? 'white' : 'text.primary'
+                }}>
+                  <Typography>{msg.content}</Typography>
+                  {msg.confidence && (
+                    <Box sx={{ mt: 2 }}>
+                      <Chip label={`Confidence: ${(msg.confidence * 100).toFixed(0)}%`} color="success" size="small" />
+                    </Box>
+                  )}
+                </Paper>
+              </Box>
+            ))
+          )}
+        </Box>
+
+        <Box sx={{ p: 3, display: 'flex', gap: 2 }}>
+          <TextField
+            fullWidth
+            multiline
+            maxRows={3}
+            placeholder="Ask LexiSense AI about this contract..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+          />
+          <Button variant="contained" onClick={sendMessage} endIcon={<Send />}>
+            Send
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
+  );
+}

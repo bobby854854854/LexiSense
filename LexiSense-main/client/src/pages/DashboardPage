@@ -1,0 +1,76 @@
+// client/src/pages/DashboardPage.tsx
+import { useContracts } from '../hooks/useContracts';
+import { Button } from '../components/ui/button';
+import { Card } from '../components/ui/card';
+import { Upload, FileText, Users } from 'lucide-react';
+
+export default function DashboardPage() {
+  const { contracts, loading, uploadContract } = useContracts();
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-white">
+      <div className="max-w-6xl mx-auto p-8">
+        <div className="flex justify-between items-center mb-10">
+          <h1 className="text-4xl font-bold">LexiSense</h1>
+          <div className="flex items-center gap-4">
+            <span className="text-emerald-400">● Live</span>
+            <Button onClick={() => document.getElementById('file')?.click()}>
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Contract
+            </Button>
+            <input
+              id="file"
+              type="file"
+              accept=".pdf,.txt"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && uploadContract(e.target.files[0])}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-zinc-900 p-6">
+            <div className="flex items-center gap-4">
+              <FileText className="h-10 w-10 text-indigo-400" />
+              <div>
+                <div className="text-3xl font-bold">{contracts.length}</div>
+                <div className="text-zinc-400">Contracts</div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-zinc-900 p-6">
+            <div className="flex items-center gap-4">
+              <Users className="h-10 w-10 text-emerald-400" />
+              <div>
+                <div className="text-3xl font-bold">3</div>
+                <div className="text-zinc-400">Team Members</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="mt-10">
+          <h2 className="text-xl font-semibold mb-4">Recent Contracts</h2>
+          {loading ? (
+            <p>Loading...</p>
+          ) : contracts.length === 0 ? (
+            <p className="text-zinc-500">No contracts yet. Upload one above.</p>
+          ) : (
+            <div className="grid gap-4">
+              {contracts.slice(0, 5).map((c) => (
+                <div key={c.id} className="bg-zinc-900 p-5 rounded-2xl flex justify-between items-center">
+                  <div>
+                    <div className="font-medium">{c.originalName}</div>
+                    <div className="text-sm text-zinc-500">{new Date(c.createdAt).toLocaleDateString()}</div>
+                  </div>
+                  <div className="text-emerald-400 text-sm font-medium">Analyzed</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
