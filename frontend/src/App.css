@@ -1,34 +1,199 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+code, pre, .font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-.App-link {
-    color: #61dafb;
+@layer base {
+  :root {
+    --background: 220 15% 8%;
+    --foreground: 0 0% 95%;
+
+    --card: 220 13% 12%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 220 13% 12%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 216 85% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 12% 16%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 220 12% 16%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 270 70% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 358 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 10% 20%;
+    --input: 220 10% 20%;
+    --ring: 216 85% 35%;
+
+    --radius: 0.5rem;
+
+    /* Semantic colors */
+    --success: 145 65% 45%;
+    --warning: 38 90% 55%;
+    --error: 358 75% 55%;
+    --info: 200 85% 55%;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 220 15% 8%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 8%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 8%;
+
+    --primary: 216 85% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 96%;
+    --secondary-foreground: 220 15% 8%;
+
+    --muted: 220 15% 96%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 270 70% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 358 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
+    --ring: 216 85% 35%;
+  }
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Custom animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Prose styling for AI content */
+.prose {
+  @apply text-foreground;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  @apply text-foreground font-semibold;
+}
+
+.prose p {
+  @apply text-muted-foreground leading-relaxed;
+}
+
+.prose ul, .prose ol {
+  @apply text-muted-foreground;
+}
+
+.prose code {
+  @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono;
+}
+
+/* Focus styles */
+.focus-visible\:ring-2:focus-visible {
+  @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+}
+
+/* Badge colors */
+.bg-green-500\/10 { background-color: hsl(145 65% 45% / 0.1); }
+.text-green-500 { color: hsl(145 65% 45%); }
+.border-green-500\/20 { border-color: hsl(145 65% 45% / 0.2); }
+
+.bg-yellow-500\/10 { background-color: hsl(38 90% 55% / 0.1); }
+.text-yellow-500 { color: hsl(38 90% 55%); }
+.border-yellow-500\/20 { border-color: hsl(38 90% 55% / 0.2); }
+
+.bg-red-500\/10 { background-color: hsl(358 75% 55% / 0.1); }
+.text-red-500 { color: hsl(358 75% 55%); }
+.border-red-500\/20 { border-color: hsl(358 75% 55% / 0.2); }
+
+.bg-blue-500\/10 { background-color: hsl(200 85% 55% / 0.1); }
+.text-blue-500 { color: hsl(200 85% 55%); }
+
+.bg-purple-500\/10 { background-color: hsl(270 70% 60% / 0.1); }
+.text-purple-500 { color: hsl(270 70% 60%); }
+.border-purple-500\/20 { border-color: hsl(270 70% 60% / 0.2); }
+
+.bg-gray-500\/10 { background-color: hsl(220 10% 50% / 0.1); }
+.text-gray-500 { color: hsl(220 10% 50%); }
+
+/* Visual edits wrapper fix */
+@layer base {
+  [data-debug-wrapper="true"] {
+    display: contents !important;
+  }
+}
+
+/* Grid pattern for auth pages */
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
 }
