@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { contractsAPI, versionsAPI } from '../api';
+import { contractsAPI, versionsAPI, workflowAPI } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -24,6 +24,10 @@ import {
   Bot,
   History,
   RotateCcw,
+  CheckCircle,
+  XCircle,
+  ArrowRight,
+  Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -49,10 +53,20 @@ const StatusBadge = ({ status }) => {
     draft: 'bg-blue-500/10 text-blue-500',
     expired: 'bg-gray-500/10 text-gray-500',
     pending: 'bg-yellow-500/10 text-yellow-500',
+    review: 'bg-orange-500/10 text-orange-500',
+    approved: 'bg-emerald-500/10 text-emerald-500',
+  };
+  const labels = {
+    review: 'In Review',
+    approved: 'Approved',
+    active: 'Active',
+    draft: 'Draft',
+    expired: 'Expired',
+    pending: 'Pending',
   };
   return (
     <Badge variant="secondary" className={colors[status] || colors.draft}>
-      {status || 'draft'}
+      {labels[status] || status || 'draft'}
     </Badge>
   );
 };
@@ -68,11 +82,14 @@ export default function ContractDetailPage() {
   const [versions, setVersions] = useState([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [restoringVersion, setRestoringVersion] = useState(null);
+  const [workflowData, setWorkflowData] = useState(null);
+  const [workflowLoading, setWorkflowLoading] = useState(false);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
     fetchContract();
     fetchVersions();
+    fetchWorkflow();
   }, [id]);
 
   useEffect(() => {
@@ -100,6 +117,29 @@ export default function ContractDetailPage() {
       console.error('Failed to load versions:', error);
     } finally {
       setVersionsLoading(false);
+    }
+  };
+
+  const fetchWorkflow = async () => {
+    try {
+      const response = await workflowAPI.getHistory(id);
+      setWorkflowData(response.data);
+    } catch (error) {
+      console.error('Failed to load workflow:', error);
+    }
+  };
+
+  const handleWorkflowAction = async (action) => {
+    setWorkflowLoading(true);
+    try {
+      await workflowAPI.performAction(id, action);
+      toast.success(`Action "${action.replace(/_/g, ' ')}" completed`);
+      fetchContract();
+      fetchWorkflow();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Workflow action failed');
+    } finally {
+      setWorkflowLoading(false);
     }
   };
 
@@ -195,6 +235,75 @@ export default function ContractDetailPage() {
             </p>
           </div>
         </div>
+
+        {/* Workflow Actions */}
+        <Card className="border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3 flex-wrap">
+                <Zap className="h-5 w-5 text-primary" />
+                <span className="text-sm font-medium">Workflow:</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {['draft', 'review', 'approved', 'active'].map((step, i) => {
+                    const isCurrent = contract.status === step;
+                    const isPast = ['draft', 'review', 'approved', 'active'].indexOf(contract.status) > i;
+                    return (
+                      <span key={step} className="flex items-center gap-1.5">
+                        {i > 0 && <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                        <Badge
+                          variant={isCurrent ? 'default' : isPast ? 'secondary' : 'outline'}
+                          className={`text-xs ${isCurrent ? '' : isPast ? 'opacity-70' : 'opacity-40'}`}
+                        >
+                          {step === 'review' ? 'In Review' : step.charAt(0).toUpperCase() + step.slice(1)}
+                        </Badge>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap" data-testid="workflow-actions">
+                {contract.status === 'draft' && (
+                  <Button size="sm" onClick={() => handleWorkflowAction('submit_for_review')} disabled={workflowLoading} data-testid="workflow-submit">
+                    {workflowLoading ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
+                    Submit for Review
+                  </Button>
+                )}
+                {contract.status === 'review' && (
+                  <>
+                    <Button size="sm" variant="default" onClick={() => handleWorkflowAction('approve')} disabled={workflowLoading} data-testid="workflow-approve">
+                      <CheckCircle className="mr-1 h-3.5 w-3.5" /> Approve
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleWorkflowAction('reject')} disabled={workflowLoading} data-testid="workflow-reject">
+                      <XCircle className="mr-1 h-3.5 w-3.5" /> Reject
+                    </Button>
+                  </>
+                )}
+                {contract.status === 'approved' && (
+                  <Button size="sm" onClick={() => handleWorkflowAction('activate')} disabled={workflowLoading} data-testid="workflow-activate">
+                    <CheckCircle className="mr-1 h-3.5 w-3.5" /> Activate
+                  </Button>
+                )}
+              </div>
+            </div>
+            {/* Workflow History */}
+            {workflowData?.history?.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Recent Workflow Activity</p>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {workflowData.history.slice(-5).reverse().map((entry, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <ArrowRight className="h-3 w-3 shrink-0" />
+                      <span className="font-medium">{entry.userEmail}</span>
+                      <span>{entry.action.replace(/_/g, ' ')}</span>
+                      <span>({entry.fromStatus} &rarr; {entry.toStatus})</span>
+                      <span className="ml-auto whitespace-nowrap">{new Date(entry.timestamp).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}

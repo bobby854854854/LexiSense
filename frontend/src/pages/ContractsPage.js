@@ -71,10 +71,16 @@ const StatusBadge = ({ status }) => {
     draft: 'bg-blue-500/10 text-blue-500',
     expired: 'bg-gray-500/10 text-gray-500',
     pending: 'bg-yellow-500/10 text-yellow-500',
+    review: 'bg-orange-500/10 text-orange-500',
+    approved: 'bg-emerald-500/10 text-emerald-500',
+  };
+  const labels = {
+    review: 'In Review',
+    approved: 'Approved',
   };
   return (
     <Badge variant="secondary" className={colors[status] || colors.draft}>
-      {status || 'draft'}
+      {labels[status] || status || 'draft'}
     </Badge>
   );
 };
@@ -458,10 +464,11 @@ export default function ContractsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="review">In Review</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="expired">Expired</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={typeFilter} onValueChange={setTypeFilter}>

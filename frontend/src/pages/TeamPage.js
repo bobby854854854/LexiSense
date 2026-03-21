@@ -56,6 +56,7 @@ import { toast } from 'sonner';
 const RoleBadge = ({ role }) => {
   const colors = {
     admin: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+    manager: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
     user: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
     viewer: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
   };
@@ -237,9 +238,15 @@ export default function TeamPage() {
                             Admin - Full access
                           </div>
                         </SelectItem>
-                        <SelectItem value="user">
+                        <SelectItem value="manager">
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
+                            Manager - Approve &amp; manage
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="user">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4" />
                             User - Can manage contracts
                           </div>
                         </SelectItem>
@@ -286,7 +293,7 @@ export default function TeamPage() {
               Team Members ({members.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -347,6 +354,13 @@ export default function TeamPage() {
                               >
                                 <Shield className="mr-2 h-4 w-4" />
                                 Make Admin
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleUpdateRole(member.id, 'manager')}
+                                disabled={member.role === 'manager'}
+                              >
+                                <Users className="mr-2 h-4 w-4" />
+                                Make Manager
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleUpdateRole(member.id, 'user')}

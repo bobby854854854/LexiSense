@@ -13,6 +13,7 @@ import TeamPage from './pages/TeamPage';
 import AlertsPage from './pages/AlertsPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import TemplatesPage from './pages/TemplatesPage';
+import AuditLogPage from './pages/AuditLogPage';
 
 import './App.css';
 
@@ -81,6 +82,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <TeamPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/audit"
+              element={
+                <ProtectedRoute>
+                  <AuditLogPage />
                 </ProtectedRoute>
               }
             />

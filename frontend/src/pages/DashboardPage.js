@@ -52,10 +52,13 @@ const StatusBadge = ({ status }) => {
     draft: 'bg-blue-500/10 text-blue-500',
     expired: 'bg-gray-500/10 text-gray-500',
     pending: 'bg-yellow-500/10 text-yellow-500',
+    review: 'bg-orange-500/10 text-orange-500',
+    approved: 'bg-emerald-500/10 text-emerald-500',
   };
+  const labels = { review: 'In Review', approved: 'Approved' };
   return (
     <Badge variant="secondary" className={colors[status] || colors.draft}>
-      {status || 'Draft'}
+      {labels[status] || status || 'Draft'}
     </Badge>
   );
 };

@@ -10,6 +10,7 @@ from utils.auth import get_current_user
 from services.ai_service import analyze_contract, get_chat_response
 from services.storage_service import upload_file_to_s3, delete_file_from_s3
 from services.pdf_service import extract_text_from_file
+from services.audit_service import log_action
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/contracts", tags=["Contracts"])
@@ -216,7 +217,7 @@ async def upload_contract(
         title=title,
         counterparty=counterparty,
         contractType=contractType,
-        status="active",
+        status="draft",
         value=contract_value,
         effectiveDate=effective_date,
         expiryDate=expiry_date,
@@ -231,6 +232,16 @@ async def upload_contract(
     
     contract_doc = contract.model_dump()
     await db.contracts.insert_one(contract_doc)
+    
+    await log_action(
+        organization_id=current_user["organizationId"],
+        user_id=current_user["sub"],
+        user_email=current_user.get("email"),
+        action="contract_uploaded",
+        resource_type="contract",
+        resource_id=contract.id,
+        resource_title=title,
+    )
     
     uploader = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0, "email": 1})
     
@@ -334,7 +345,7 @@ async def bulk_upload_contracts(
                 uploadedBy=current_user["sub"],
                 title=title,
                 contractType=contractType,
-                status="active",
+                status="draft",
                 value=contract_value,
                 effectiveDate=effective_date,
                 expiryDate=expiry_date,
@@ -659,7 +670,7 @@ async def delete_contract(
             detail="Contract not found"
         )
     
-    if current_user["role"] != "admin" and contract["uploadedBy"] != current_user["sub"]:
+    if current_user["role"] not in ("admin", "manager") and contract["uploadedBy"] != current_user["sub"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins or the uploader can delete this contract"
@@ -670,5 +681,15 @@ async def delete_contract(
     
     await db.contracts.delete_one({"id": contract_id})
     await db.chat_history.delete_many({"contractId": contract_id})
+    
+    await log_action(
+        organization_id=current_user["organizationId"],
+        user_id=current_user["sub"],
+        user_email=current_user.get("email"),
+        action="contract_deleted",
+        resource_type="contract",
+        resource_id=contract_id,
+        resource_title=contract.get("title"),
+    )
     
     return {"message": "Contract deleted successfully"}

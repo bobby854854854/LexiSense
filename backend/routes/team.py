@@ -7,6 +7,7 @@ from models.user import User, UserResponse
 from models.invitation import Invitation, InvitationCreate, InvitationResponse
 from utils.auth import get_current_user, hash_password
 from services.email_service import send_invitation_email
+from services.audit_service import log_action
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/team", tags=["Team"])
@@ -99,6 +100,17 @@ async def invite_member(
     )
     
     logger.info(f"Invitation created for {invitation_data.email} with token {invitation.token}, email: {email_result}")
+    
+    await log_action(
+        organization_id=current_user["organizationId"],
+        user_id=current_user["sub"],
+        user_email=current_user.get("email"),
+        action="team_invite_sent",
+        resource_type="team",
+        resource_id=invitation.id,
+        resource_title=invitation_data.email,
+        details={"role": invitation_data.role},
+    )
     
     return InvitationResponse(
         id=invitation.id,
@@ -228,10 +240,10 @@ async def update_member_role(
             detail="Cannot change your own role"
         )
     
-    if role not in ["admin", "user", "viewer"]:
+    if role not in ["admin", "manager", "user", "viewer"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid role. Must be admin, user, or viewer"
+            detail="Invalid role. Must be admin, manager, user, or viewer"
         )
     
     result = await db.users.update_one(

@@ -110,4 +110,25 @@ export const analyticsAPI = {
   compare: (id1, id2) => api.get(`/analytics/contracts/${id1}/compare/${id2}`),
 };
 
+// Workflow API
+export const workflowAPI = {
+  getStates: () => api.get('/contracts/workflow/states'),
+  performAction: (contractId, action, comment) =>
+    api.post(`/contracts/${contractId}/workflow/${action}`, null, { params: { comment } }),
+  getHistory: (contractId) => api.get(`/contracts/${contractId}/workflow/history`),
+};
+
+// Notifications API
+export const notificationsAPI = {
+  list: (limit = 30) => api.get('/notifications', { params: { limit } }),
+  unreadCount: () => api.get('/notifications/unread-count'),
+  markRead: (id) => api.post(`/notifications/${id}/read`),
+  markAllRead: () => api.post('/notifications/read-all'),
+};
+
+// Audit API
+export const auditAPI = {
+  list: (params) => api.get('/audit', { params }),
+};
+
 export default api;

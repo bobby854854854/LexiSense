@@ -33,6 +33,10 @@ from routes.alerts import router as alerts_router, init_db as init_alerts_db
 from routes.templates import router as templates_router, init_db as init_templates_db
 from routes.export import router as export_router, init_db as init_export_db
 from routes.analytics import router as analytics_router, init_db as init_analytics_db
+from routes.audit import router as audit_router, init_db as init_audit_db
+from routes.notifications import router as notifications_router, init_db as init_notifications_db
+from routes.workflow import router as workflow_router, init_db as init_workflow_db
+from services.audit_service import init_db as init_audit_service_db
 
 # Initialize database for all route modules
 init_auth_db(db)
@@ -43,6 +47,10 @@ init_alerts_db(db)
 init_templates_db(db)
 init_export_db(db)
 init_analytics_db(db)
+init_audit_db(db)
+init_notifications_db(db)
+init_workflow_db(db)
+init_audit_service_db(db)
 
 # Include all routers
 api_router.include_router(auth_router)
@@ -53,6 +61,9 @@ api_router.include_router(alerts_router)
 api_router.include_router(templates_router)
 api_router.include_router(export_router)
 api_router.include_router(analytics_router)
+api_router.include_router(audit_router)
+api_router.include_router(notifications_router)
+api_router.include_router(workflow_router)
 
 # Health check endpoint
 @api_router.get("/health")
@@ -109,6 +120,10 @@ async def startup_event():
     await db.contract_versions.create_index([("contractId", 1), ("version", -1)])
     await db.expiration_alerts.create_index([("contractId", 1), ("daysBeforeExpiry", 1)])
     await db.templates.create_index([("organizationId", 1), ("name", 1)])
+    await db.audit_logs.create_index([("organizationId", 1), ("createdAt", -1)])
+    await db.audit_logs.create_index([("organizationId", 1), ("resourceType", 1)])
+    await db.notifications.create_index([("userId", 1), ("createdAt", -1)])
+    await db.notifications.create_index([("userId", 1), ("isRead", 1)])
     logger.info("Database indexes created")
     
     # Initialize scheduler for daily alert emails

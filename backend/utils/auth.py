@@ -54,3 +54,15 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             detail="Invalid token payload",
         )
     return payload
+
+
+def require_role(*allowed_roles):
+    """Dependency factory that restricts access to specific roles."""
+    async def _check(current_user: dict = Depends(get_current_user)):
+        if current_user.get("role") not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"This action requires one of these roles: {', '.join(allowed_roles)}",
+            )
+        return current_user
+    return _check

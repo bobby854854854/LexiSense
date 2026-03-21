@@ -42,6 +42,9 @@ class Contract(BaseModel):
     fileSize: Optional[int] = None
     mimeType: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
+    workflowHistory: List[Dict[str, Any]] = Field(default_factory=list)
+    approvedBy: Optional[str] = None
+    approvedAt: Optional[str] = None
     createdAt: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updatedAt: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
