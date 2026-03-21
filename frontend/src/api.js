@@ -69,4 +69,21 @@ export const dashboardAPI = {
   getActivity: () => api.get('/dashboard/activity'),
 };
 
+// Alerts API
+export const alertsAPI = {
+  getSettings: () => api.get('/alerts/settings'),
+  updateSettings: (alertDays, emailEnabled) => 
+    api.put('/alerts/settings', null, { params: { alertDays, emailEnabled } }),
+  getExpiring: (days = 30) => api.get('/alerts/expiring', { params: { days } }),
+  checkAndSend: () => api.post('/alerts/check-and-send'),
+  getHistory: (limit = 50) => api.get('/alerts/history', { params: { limit } }),
+};
+
+// Contract Versions API
+export const versionsAPI = {
+  getVersions: (contractId) => api.get(`/contracts/${contractId}/versions`),
+  getVersion: (contractId, versionNum) => api.get(`/contracts/${contractId}/versions/${versionNum}`),
+  restore: (contractId, versionNum) => api.post(`/contracts/${contractId}/restore/${versionNum}`),
+};
+
 export default api;

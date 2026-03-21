@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import ContractsPage from './pages/ContractsPage';
 import ContractDetailPage from './pages/ContractDetailPage';
 import TeamPage from './pages/TeamPage';
+import AlertsPage from './pages/AlertsPage';
 
 import './App.css';
 
@@ -52,6 +53,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <TeamPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/alerts"
+            element={
+              <ProtectedRoute>
+                <AlertsPage />
               </ProtectedRoute>
             }
           />

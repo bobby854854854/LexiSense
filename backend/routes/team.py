@@ -6,6 +6,7 @@ import logging
 from models.user import User, UserResponse
 from models.invitation import Invitation, InvitationCreate, InvitationResponse
 from utils.auth import get_current_user, hash_password
+from services.email_service import send_invitation_email
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/team", tags=["Team"])
@@ -81,7 +82,23 @@ async def invite_member(
     invite_doc = invitation.model_dump()
     await db.invitations.insert_one(invite_doc)
     
-    logger.info(f"Invitation created for {invitation_data.email} with token {invitation.token}")
+    # Get inviter details and organization name
+    inviter = await db.users.find_one({"id": current_user["sub"]}, {"_id": 0, "firstName": 1, "lastName": 1, "email": 1})
+    org = await db.organizations.find_one({"id": current_user["organizationId"]}, {"_id": 0, "name": 1})
+    
+    inviter_name = f"{inviter.get('firstName', '')} {inviter.get('lastName', '')}".strip() or inviter.get("email", "Team member")
+    org_name = org.get("name", "the organization") if org else "the organization"
+    
+    # Send invitation email
+    email_result = await send_invitation_email(
+        to_email=invitation_data.email,
+        inviter_name=inviter_name,
+        organization_name=org_name,
+        role=invitation_data.role,
+        token=invitation.token
+    )
+    
+    logger.info(f"Invitation created for {invitation_data.email} with token {invitation.token}, email: {email_result}")
     
     return InvitationResponse(
         id=invitation.id,

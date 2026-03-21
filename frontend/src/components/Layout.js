@@ -11,6 +11,7 @@ import {
   X,
   ChevronDown,
   Scale,
+  Bell,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback } from './ui/avatar';
@@ -25,6 +26,7 @@ import {
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/contracts', label: 'Contracts', icon: FileText },
+  { path: '/alerts', label: 'Alerts', icon: Bell },
   { path: '/team', label: 'Team', icon: Users },
 ];
 

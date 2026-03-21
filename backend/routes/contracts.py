@@ -5,6 +5,7 @@ import logging
 import uuid
 
 from models.contract import Contract, ContractCreate, ContractResponse, ChatMessage, ChatResponse
+from models.contract_version import ContractVersion, ContractVersionResponse
 from utils.auth import get_current_user
 from services.ai_service import analyze_contract, get_chat_response
 from services.storage_service import upload_file_to_s3, delete_file_from_s3
@@ -272,11 +273,77 @@ async def update_contract(
     title: Optional[str] = None,
     counterparty: Optional[str] = None,
     contractType: Optional[str] = None,
-    status: Optional[str] = None,
+    contract_status: Optional[str] = None,
     tags: Optional[List[str]] = None,
+    changeReason: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
-    """Update a contract's metadata."""
+    """Update a contract's metadata and create a version history entry."""
+    contract = await db.contracts.find_one(
+        {"id": contract_id, "organizationId": current_user["organizationId"]},
+        {"_id": 0}
+    )
+    
+    if not contract:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Contract not found"
+        )
+    
+    # Get current version number
+    latest_version = await db.contract_versions.find_one(
+        {"contractId": contract_id},
+        {"_id": 0, "version": 1},
+        sort=[("version", -1)]
+    )
+    new_version = (latest_version["version"] + 1) if latest_version else 1
+    
+    # Create version snapshot before update
+    version = ContractVersion(
+        contractId=contract_id,
+        version=new_version,
+        title=contract.get("title"),
+        counterparty=contract.get("counterparty"),
+        contractType=contract.get("contractType"),
+        status=contract.get("status"),
+        value=contract.get("value"),
+        effectiveDate=contract.get("effectiveDate"),
+        expiryDate=contract.get("expiryDate"),
+        riskLevel=contract.get("riskLevel"),
+        originalText=contract.get("originalText"),
+        aiAnalysis=contract.get("aiAnalysis"),
+        changedBy=current_user["sub"],
+        changeReason=changeReason
+    )
+    await db.contract_versions.insert_one(version.model_dump())
+    
+    # Apply updates
+    update_data = {"updatedAt": datetime.now(timezone.utc).isoformat()}
+    if title is not None:
+        update_data["title"] = title
+    if counterparty is not None:
+        update_data["counterparty"] = counterparty
+    if contractType is not None:
+        update_data["contractType"] = contractType
+    if contract_status is not None:
+        update_data["status"] = contract_status
+    if tags is not None:
+        update_data["tags"] = tags
+    
+    await db.contracts.update_one(
+        {"id": contract_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Contract updated successfully", "version": new_version}
+
+
+@router.get("/{contract_id}/versions", response_model=List[ContractVersionResponse])
+async def get_contract_versions(
+    contract_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get version history for a contract."""
     contract = await db.contracts.find_one(
         {"id": contract_id, "organizationId": current_user["organizationId"]}
     )
@@ -287,24 +354,136 @@ async def update_contract(
             detail="Contract not found"
         )
     
-    update_data = {"updatedAt": datetime.now(timezone.utc).isoformat()}
-    if title is not None:
-        update_data["title"] = title
-    if counterparty is not None:
-        update_data["counterparty"] = counterparty
-    if contractType is not None:
-        update_data["contractType"] = contractType
-    if status is not None:
-        update_data["status"] = status
-    if tags is not None:
-        update_data["tags"] = tags
+    versions = await db.contract_versions.find(
+        {"contractId": contract_id},
+        {"_id": 0}
+    ).sort("version", -1).to_list(100)
     
-    await db.contracts.update_one(
-        {"id": contract_id},
-        {"$set": update_data}
+    result = []
+    for v in versions:
+        user = await db.users.find_one({"id": v["changedBy"]}, {"_id": 0, "email": 1})
+        result.append(ContractVersionResponse(
+            id=v["id"],
+            contractId=v["contractId"],
+            version=v["version"],
+            title=v["title"],
+            status=v["status"],
+            changedBy=v["changedBy"],
+            changedByEmail=user["email"] if user else None,
+            changeReason=v.get("changeReason"),
+            createdAt=v["createdAt"]
+        ))
+    
+    return result
+
+
+@router.get("/{contract_id}/versions/{version_num}")
+async def get_contract_version(
+    contract_id: str,
+    version_num: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get a specific version of a contract."""
+    contract = await db.contracts.find_one(
+        {"id": contract_id, "organizationId": current_user["organizationId"]}
     )
     
-    return {"message": "Contract updated successfully"}
+    if not contract:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Contract not found"
+        )
+    
+    version = await db.contract_versions.find_one(
+        {"contractId": contract_id, "version": version_num},
+        {"_id": 0}
+    )
+    
+    if not version:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Version not found"
+        )
+    
+    user = await db.users.find_one({"id": version["changedBy"]}, {"_id": 0, "email": 1})
+    version["changedByEmail"] = user["email"] if user else None
+    
+    return version
+
+
+@router.post("/{contract_id}/restore/{version_num}")
+async def restore_contract_version(
+    contract_id: str,
+    version_num: int,
+    current_user: dict = Depends(get_current_user)
+):
+    """Restore a contract to a previous version."""
+    contract = await db.contracts.find_one(
+        {"id": contract_id, "organizationId": current_user["organizationId"]}
+    )
+    
+    if not contract:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Contract not found"
+        )
+    
+    version = await db.contract_versions.find_one(
+        {"contractId": contract_id, "version": version_num},
+        {"_id": 0}
+    )
+    
+    if not version:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Version not found"
+        )
+    
+    # Create a new version entry for the current state before restoring
+    latest_version = await db.contract_versions.find_one(
+        {"contractId": contract_id},
+        {"_id": 0, "version": 1},
+        sort=[("version", -1)]
+    )
+    new_version = (latest_version["version"] + 1) if latest_version else 1
+    
+    current_version = ContractVersion(
+        contractId=contract_id,
+        version=new_version,
+        title=contract.get("title"),
+        counterparty=contract.get("counterparty"),
+        contractType=contract.get("contractType"),
+        status=contract.get("status"),
+        value=contract.get("value"),
+        effectiveDate=contract.get("effectiveDate"),
+        expiryDate=contract.get("expiryDate"),
+        riskLevel=contract.get("riskLevel"),
+        originalText=contract.get("originalText"),
+        aiAnalysis=contract.get("aiAnalysis"),
+        changedBy=current_user["sub"],
+        changeReason=f"Before restoring to version {version_num}"
+    )
+    await db.contract_versions.insert_one(current_version.model_dump())
+    
+    # Restore the contract to the selected version
+    await db.contracts.update_one(
+        {"id": contract_id},
+        {"$set": {
+            "title": version["title"],
+            "counterparty": version.get("counterparty"),
+            "contractType": version["contractType"],
+            "status": version["status"],
+            "value": version.get("value"),
+            "effectiveDate": version.get("effectiveDate"),
+            "expiryDate": version.get("expiryDate"),
+            "riskLevel": version.get("riskLevel"),
+            "originalText": version.get("originalText"),
+            "aiAnalysis": version.get("aiAnalysis"),
+            "updatedAt": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": f"Contract restored to version {version_num}", "newVersion": new_version}
 
 
 @router.delete("/{contract_id}")

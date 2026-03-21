@@ -28,7 +28,7 @@ class LexiSenseAPITester:
             "details": details
         })
 
-    def run_api_test(self, name, method, endpoint, expected_status, data=None, files=None):
+    def run_api_test(self, name, method, endpoint, expected_status, data=None, files=None, params=None):
         """Run a single API test"""
         url = f"{self.base_url}/api/{endpoint}"
         headers = {'Content-Type': 'application/json'}
@@ -41,14 +41,26 @@ class LexiSenseAPITester:
 
         try:
             if method == 'GET':
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, params=params)
             elif method == 'POST':
                 if files:
                     response = requests.post(url, files=files, data=data, headers=headers)
                 else:
                     response = requests.post(url, json=data, headers=headers)
+            elif method == 'PUT':
+                if params:
+                    response = requests.put(url, headers=headers, params=params)
+                else:
+                    response = requests.put(url, json=data, headers=headers)
             elif method == 'PATCH':
-                response = requests.patch(url, json=data, headers=headers)
+                if params:
+                    response = requests.patch(url, headers=headers, params=params)
+                elif files or isinstance(data, dict) and any(isinstance(v, (list, str)) for v in data.values()):
+                    # Form data for PATCH
+                    headers.pop('Content-Type', None)
+                    response = requests.patch(url, data=data, headers=headers)
+                else:
+                    response = requests.patch(url, json=data, headers=headers)
             elif method == 'DELETE':
                 response = requests.delete(url, headers=headers)
 
@@ -147,6 +159,72 @@ class LexiSenseAPITester:
         """Test logout endpoint"""
         return self.run_api_test("User Logout", "POST", "auth/logout", 200) is not None
 
+    # NEW FEATURES TESTING
+    def test_team_invite_email(self):
+        """Test team invitation with email sending - POST /api/team/invite"""
+        invite_data = {
+            "email": f"invited_user_{datetime.now().strftime('%H%M%S')}@example.com",
+            "role": "user"
+        }
+        response = self.run_api_test("Team Invite Email", "POST", "team/invite", 200, invite_data)
+        return response is not None
+
+    def test_alert_settings_get(self):
+        """Test get alert settings - GET /api/alerts/settings"""
+        return self.run_api_test("Get Alert Settings", "GET", "alerts/settings", 200) is not None
+
+    def test_alert_settings_update(self):
+        """Test update alert settings - PUT /api/alerts/settings"""
+        params = {
+            "alertDays": [30, 14, 7, 1],
+            "emailEnabled": True
+        }
+        return self.run_api_test("Update Alert Settings", "PUT", "alerts/settings", 200, params=params) is not None
+
+    def test_expiring_contracts(self):
+        """Test get expiring contracts - GET /api/alerts/expiring"""
+        return self.run_api_test("Get Expiring Contracts", "GET", "alerts/expiring?days=30", 200) is not None
+
+    def test_alert_history(self):
+        """Test get alert history - GET /api/alerts/history"""
+        return self.run_api_test("Get Alert History", "GET", "alerts/history", 200) is not None
+
+    def test_contract_upload_and_versions(self):
+        """Test contract upload and version creation"""
+        # First upload a contract
+        test_content = "This is a test contract content for version testing."
+        files = {'file': ('test_contract.txt', test_content, 'text/plain')}
+        form_data = {
+            'title': 'Test Contract for Versions',
+            'counterparty': 'Test Company',
+            'contractType': 'Service Agreement'
+        }
+        
+        response = self.run_api_test("Contract Upload", "POST", "contracts", 200, form_data, files)
+        if response and response.get('id'):
+            contract_id = response['id']
+            
+            # Test getting contract versions
+            versions_response = self.run_api_test("Get Contract Versions", "GET", f"contracts/{contract_id}/versions", 200)
+            
+            # Test updating contract (should create version)
+            update_params = {
+                "title": "Updated Test Contract",
+                "changeReason": "Testing version creation"
+            }
+            update_response = self.run_api_test("Update Contract (Create Version)", "PATCH", f"contracts/{contract_id}", 200, params=update_params)
+            
+            # Test getting versions again (should have new version)
+            versions_after_update = self.run_api_test("Get Contract Versions After Update", "GET", f"contracts/{contract_id}/versions", 200)
+            
+            return all([versions_response is not None, update_response is not None, versions_after_update is not None])
+        
+        return False
+
+    def test_check_and_send_alerts(self):
+        """Test manual alert check and send"""
+        return self.run_api_test("Check and Send Alerts", "POST", "alerts/check-and-send", 200) is not None
+
     def run_all_tests(self):
         """Run all backend API tests"""
         print("🚀 Starting LexiSense Backend API Tests")
@@ -164,6 +242,18 @@ class LexiSenseAPITester:
             self.test_contracts_list()
             self.test_team_members_list()
             self.test_team_invitations_list()
+            
+            # NEW FEATURES TESTING
+            print("\n🔥 Testing New Features:")
+            print("-" * 30)
+            self.test_team_invite_email()
+            self.test_alert_settings_get()
+            self.test_alert_settings_update()
+            self.test_expiring_contracts()
+            self.test_alert_history()
+            self.test_contract_upload_and_versions()
+            self.test_check_and_send_alerts()
+            
             self.test_logout()
             
             # Test login with registered credentials

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { contractsAPI } from '../api';
+import { contractsAPI, versionsAPI } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -22,6 +22,8 @@ import {
   Shield,
   Lightbulb,
   Bot,
+  History,
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -63,10 +65,14 @@ export default function ContractDetailPage() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [versions, setVersions] = useState([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [restoringVersion, setRestoringVersion] = useState(null);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
     fetchContract();
+    fetchVersions();
   }, [id]);
 
   useEffect(() => {
@@ -82,6 +88,36 @@ export default function ContractDetailPage() {
       navigate('/contracts');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchVersions = async () => {
+    setVersionsLoading(true);
+    try {
+      const response = await versionsAPI.getVersions(id);
+      setVersions(response.data);
+    } catch (error) {
+      console.error('Failed to load versions:', error);
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  const handleRestoreVersion = async (versionNum) => {
+    if (!window.confirm(`Restore contract to version ${versionNum}? This will create a new version with the current state.`)) {
+      return;
+    }
+    
+    setRestoringVersion(versionNum);
+    try {
+      await versionsAPI.restore(id, versionNum);
+      toast.success(`Contract restored to version ${versionNum}`);
+      fetchContract();
+      fetchVersions();
+    } catch (error) {
+      toast.error('Failed to restore version');
+    } finally {
+      setRestoringVersion(null);
     }
   };
 
@@ -211,11 +247,12 @@ export default function ContractDetailPage() {
             <Card>
               <Tabs defaultValue="summary" className="w-full">
                 <CardHeader className="pb-0">
-                  <TabsList className="grid w-full grid-cols-4">
+                  <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="summary">Summary</TabsTrigger>
                     <TabsTrigger value="risks">Risks</TabsTrigger>
                     <TabsTrigger value="terms">Key Terms</TabsTrigger>
                     <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
+                    <TabsTrigger value="history">History</TabsTrigger>
                   </TabsList>
                 </CardHeader>
                 <CardContent className="pt-6">
@@ -305,6 +342,67 @@ export default function ContractDetailPage() {
                       </ul>
                     ) : (
                       <p className="text-muted-foreground">No recommendations available</p>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="history" className="mt-0">
+                    {versionsLoading ? (
+                      <div className="space-y-3">
+                        {[...Array(3)].map((_, i) => (
+                          <Skeleton key={i} className="h-16" />
+                        ))}
+                      </div>
+                    ) : versions.length === 0 ? (
+                      <div className="text-center py-8">
+                        <History className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                        <p className="text-muted-foreground">No version history yet</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Versions are created when the contract is updated
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {versions.map((version) => (
+                          <div
+                            key={version.id}
+                            className="flex items-center justify-between p-4 rounded-lg border border-border bg-card hover:bg-accent/30 transition-colors"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                <History className="h-4 w-4 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium">Version {version.version}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {version.changedByEmail || 'Unknown user'} •{' '}
+                                  {new Date(version.createdAt).toLocaleString()}
+                                </p>
+                                {version.changeReason && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {version.changeReason}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRestoreVersion(version.version)}
+                              disabled={restoringVersion === version.version}
+                              data-testid={`restore-version-${version.version}`}
+                            >
+                              {restoringVersion === version.version ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <RotateCcw className="h-4 w-4 mr-1" />
+                                  Restore
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </TabsContent>
                 </CardContent>
