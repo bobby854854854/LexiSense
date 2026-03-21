@@ -433,6 +433,7 @@ export default function ContractsPage() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Filters */}
