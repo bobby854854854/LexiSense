@@ -6,14 +6,14 @@ Build a full stack app using the provided LexiSense.zip - an Enterprise AI-power
 ## User Choices
 - **Database**: Full PostgreSQL schema migration to MongoDB
 - **AI Integration**: GPT-5.2 with Emergent LLM key
-- **Features**: All MVP features + email notifications + version history + expiration alerts + Phase 3 features
+- **Features**: All MVP features + email notifications + version history + expiration alerts + Phase 3 features + Workflow + RBAC + Audit + Notifications
 - **Storage**: AWS S3 with placeholder credentials (MOCKED)
 - **Email Service**: Resend API for team invitations and alerts
 
 ## Architecture
 
 ### Tech Stack
-- **Frontend**: React 19 + Tailwind CSS + Radix UI / shadcn components
+- **Frontend**: React 19 + Tailwind CSS + Radix UI / shadcn + Recharts
 - **Backend**: FastAPI (Python) + Motor (async MongoDB)
 - **Database**: MongoDB
 - **AI**: GPT-5.2 via emergentintegrations library
@@ -22,54 +22,37 @@ Build a full stack app using the provided LexiSense.zip - an Enterprise AI-power
 - **Auth**: JWT-based authentication
 - **Scheduler**: APScheduler for daily alert emails
 
+### Code Architecture
+```
+/app
+├── backend/
+│   ├── models/          # Pydantic models (user, contract, audit, notification)
+│   ├── routes/          # FastAPI routers (auth, contracts, workflow, audit, notifications, etc.)
+│   ├── services/        # Business logic (AI analysis, PDF, email, audit, scheduler)
+│   ├── utils/           # Auth helpers (JWT, RBAC require_role)
+│   └── server.py        # Main FastAPI app entry point
+└── frontend/
+    ├── src/
+    │   ├── components/  # Reusable UI components (Layout with notifications, shadcn/ui)
+    │   ├── contexts/    # React contexts (Auth, Theme)
+    │   ├── pages/       # Page components (Dashboard, Contracts, Analytics, AuditLog, etc.)
+    │   ├── App.js       # Main router setup
+    │   └── api.js       # Centralized API calls
+    └── package.json
+```
+
 ### API Endpoints
-**Auth**
-- `POST /api/auth/register` - User registration with organization creation
-- `POST /api/auth/login` - User authentication
-- `GET /api/auth/me` - Get current user
-
-**Dashboard**
-- `GET /api/dashboard/stats` - Dashboard statistics
-- `GET /api/dashboard/activity` - Recent activity
-
-**Contracts**
-- `GET /api/contracts` - List contracts with advanced filters (status, type, risk, search, expiring_within, tags, date range)
-- `POST /api/contracts` - Upload single contract (file + metadata)
-- `POST /api/contracts/bulk` - Bulk upload up to 10 contracts
-- `GET /api/contracts/:id` - Get contract details
-- `PATCH /api/contracts/:id` - Update contract (creates version)
-- `DELETE /api/contracts/:id` - Delete contract
-- `POST /api/contracts/:id/chat` - AI chat about contract
-- `GET /api/contracts/:id/versions` - Get version history
-- `GET /api/contracts/:id/versions/:num` - Get specific version
-- `POST /api/contracts/:id/restore/:num` - Restore to version
-
-**Team**
-- `GET /api/team/members` - List team members
-- `POST /api/team/invite` - Invite team member (sends email via Resend)
-- `GET /api/team/invitations` - List invitations
-
-**Alerts**
-- `GET /api/alerts/settings` - Get alert settings
-- `PUT /api/alerts/settings` - Update alert settings
-- `GET /api/alerts/expiring` - Get expiring contracts
-- `POST /api/alerts/check-and-send` - Send alert emails
-- `GET /api/alerts/history` - Alert history
-
-**Templates**
-- `GET /api/templates` - List templates (org + public)
-- `GET /api/templates/default` - Get default templates
-- `GET /api/templates/:id` - Get specific template
-- `POST /api/templates` - Create template
-- `DELETE /api/templates/:id` - Delete template
-
-**Analytics**
-- `GET /api/analytics/overview` - Comprehensive analytics (stats, risk distribution, trends, top uploaders)
-- `GET /api/analytics/contracts/:id/compare/:id2` - Compare two contracts side-by-side
-
-**Export**
-- `GET /api/export/contract/:id/pdf` - Export contract as PDF
-- `GET /api/export/analytics/pdf` - Export analytics report as PDF
+**Auth**: POST /api/auth/register, POST /api/auth/login, GET /api/auth/me
+**Dashboard**: GET /api/dashboard/stats, GET /api/dashboard/activity
+**Contracts**: GET/POST /api/contracts, GET/PATCH/DELETE /api/contracts/:id, POST /api/contracts/bulk, POST /api/contracts/:id/chat, GET /api/contracts/:id/versions
+**Workflow**: GET /api/contracts/workflow/states, POST /api/contracts/:id/workflow/{action}, GET /api/contracts/:id/workflow/history
+**Team**: GET /api/team/members, POST /api/team/invite, GET /api/team/invitations
+**Alerts**: GET/PUT /api/alerts/settings, GET /api/alerts/expiring, POST /api/alerts/check-and-send
+**Templates**: GET/POST /api/templates, GET /api/templates/default, DELETE /api/templates/:id
+**Analytics**: GET /api/analytics/overview, GET /api/analytics/contracts/:id/compare/:id2
+**Export**: GET /api/export/contract/:id/pdf, GET /api/export/analytics/pdf
+**Audit**: GET /api/audit
+**Notifications**: GET /api/notifications, GET /api/notifications/unread-count, POST /api/notifications/:id/read, POST /api/notifications/read-all
 
 ## What's Been Implemented
 
@@ -82,70 +65,64 @@ Build a full stack app using the provided LexiSense.zip - an Enterprise AI-power
 - [x] AI chat interface for contract Q&A
 - [x] Team management page
 - [x] Team member invitation system
-- [x] Professional dark theme enterprise UI
 
 ### Phase 2 - Enhanced Features (2026-03-20)
 - [x] Email service integration (Resend API)
-- [x] Team invitation emails with branded HTML templates
 - [x] Contract version history tracking
-- [x] Version restore functionality
 - [x] Expiration alerts system
-- [x] Configurable alert settings (days before expiry)
-- [x] Alert email notifications
-- [x] Alerts dashboard page
+- [x] Configurable alert settings
 
 ### Phase 3 - Advanced Features (2026-03-21)
-- [x] Bulk contract upload (up to 10 files)
-- [x] Advanced search filters (status, type, risk, expiring within, text search)
-- [x] Contract comparison view (in Analytics page)
-- [x] Export contracts to PDF
-- [x] Export analytics report to PDF
-- [x] Contract templates library (3 default templates + custom)
-- [x] Analytics page with stats, risk distribution, expiration timeline, trends
+- [x] Bulk contract upload
+- [x] Advanced search filters
+- [x] Contract comparison view
+- [x] PDF export
+- [x] Contract templates library
+- [x] Analytics with Recharts (PieChart, BarChart, LineChart)
 - [x] Dark/Light theme toggle
-- [x] Scheduled job for automatic daily alert emails (APScheduler)
+- [x] Scheduled daily alert emails
 
-### Testing (2026-03-21)
-- [x] Fixed ContractsPage.js compilation error (unterminated JSX)
-- [x] All 30 backend API tests passed (100%)
-- [x] All frontend pages and interactions verified (100%)
+### Phase 4 - Enterprise Features (2026-03-21)
+- [x] Contract Workflow/Approval System (Draft -> Review -> Approved -> Active)
+- [x] Role-Based Access Control (admin/manager/user/viewer)
+- [x] Audit Logging for all operations
+- [x] In-app Notification Center with bell icon
+- [x] Audit Log page with filtering
+- [x] Manager role for approvals
+- [x] Mobile responsive improvements
 
-## User Personas
-1. **Legal Counsel** - Reviews and analyzes contracts for risks
-2. **Contract Manager** - Uploads and organizes contracts
-3. **Team Admin** - Manages team access and permissions
-4. **Executive** - Views dashboard metrics and high-level insights
+### Testing Status
+- [x] iteration_1: Core features (passed)
+- [x] iteration_2: Phase 2 features (passed)
+- [x] iteration_3: Phase 3 features - 30/30 backend + all frontend (100%)
+- [x] iteration_4: Phase 4 features - 17/17 backend + all frontend (100%)
+
+## Roles & Permissions
+| Action | Admin | Manager | User | Viewer |
+|--------|-------|---------|------|--------|
+| Upload contracts | Yes | Yes | Yes | No |
+| Delete any contract | Yes | Yes | No | No |
+| Approve/Reject contracts | Yes | Yes | No | No |
+| Submit for review | Yes | Yes | Yes | No |
+| Invite team members | Yes | No | No | No |
+| View audit logs | Yes | Yes | No | No |
+| Update alert settings | Yes | No | No | No |
 
 ## Mocked/Placeholder Components
 - **AWS S3 Storage**: Using placeholder credentials, returns mock storage keys
 
 ## Prioritized Backlog
 
-### P0 - Critical (Complete)
-- [x] All core features implemented
-- [x] Email notifications
-- [x] Version history
-- [x] Expiration alerts
-
-### P1 - Important (Complete)
-- [x] Bulk contract upload
-- [x] Advanced search filters
-- [x] Contract comparison view
-- [x] Export contracts to PDF
-
-### P2 - Nice to Have (Complete)
-- [x] Contract templates library
-- [x] Analytics charts and reports
-- [x] Dark/Light theme toggle
-
 ### P3 - Future Enhancements
-- [ ] Mobile responsive improvements (dedicated pass)
 - [ ] Real AWS S3 credentials for production file storage
-- [ ] Recharts integration for visual charts in analytics
-- [ ] Role-based access control enhancements
-- [ ] Audit logging for all operations
+- [ ] Contract tagging and categorization
+- [ ] Custom contract fields
+- [ ] Advanced reporting and export options
+- [ ] Multi-language support
+- [ ] Two-factor authentication
+- [ ] API rate limiting and usage tracking
 
 ## 3rd Party Integrations
-- **OpenAI GPT-5.2**: Uses Emergent LLM Key (sk-emergent-...)
-- **Resend**: API Key provided (re_JSfTFgjB_...)
+- **OpenAI GPT-5.2**: Uses Emergent LLM Key
+- **Resend**: API Key provided
 - **AWS S3**: MOCKED with placeholder credentials
