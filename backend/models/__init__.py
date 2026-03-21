@@ -4,3 +4,4 @@ from .contract import Contract, ContractCreate, ContractResponse, ContractAnalys
 from .invitation import Invitation, InvitationCreate, InvitationResponse
 from .contract_version import ContractVersion, ContractVersionResponse
 from .alerts import ExpirationAlert, AlertSettings
+from .template import ContractTemplate, ContractTemplateCreate, ContractTemplateResponse

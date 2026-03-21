@@ -18,7 +18,7 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI(
     title="LexiSense API",
     description="Enterprise AI-powered Contract Lifecycle Management",
-    version="1.0.0"
+    version="2.0.0"
 )
 
 # Create a router with the /api prefix
@@ -30,6 +30,9 @@ from routes.contracts import router as contracts_router, init_db as init_contrac
 from routes.team import router as team_router, init_db as init_team_db
 from routes.dashboard import router as dashboard_router, init_db as init_dashboard_db
 from routes.alerts import router as alerts_router, init_db as init_alerts_db
+from routes.templates import router as templates_router, init_db as init_templates_db
+from routes.export import router as export_router, init_db as init_export_db
+from routes.analytics import router as analytics_router, init_db as init_analytics_db
 
 # Initialize database for all route modules
 init_auth_db(db)
@@ -37,6 +40,9 @@ init_contracts_db(db)
 init_team_db(db)
 init_dashboard_db(db)
 init_alerts_db(db)
+init_templates_db(db)
+init_export_db(db)
+init_analytics_db(db)
 
 # Include all routers
 api_router.include_router(auth_router)
@@ -44,6 +50,9 @@ api_router.include_router(contracts_router)
 api_router.include_router(team_router)
 api_router.include_router(dashboard_router)
 api_router.include_router(alerts_router)
+api_router.include_router(templates_router)
+api_router.include_router(export_router)
+api_router.include_router(analytics_router)
 
 # Health check endpoint
 @api_router.get("/health")
@@ -57,12 +66,13 @@ async def health_check():
     return {
         "status": "healthy" if db_status == "healthy" else "degraded",
         "database": db_status,
-        "version": "1.0.0"
+        "version": "2.0.0",
+        "scheduler": "running"
     }
 
 @api_router.get("/")
 async def root():
-    return {"message": "LexiSense API", "version": "1.0.0"}
+    return {"message": "LexiSense API", "version": "2.0.0"}
 
 # Include the router in the main app
 app.include_router(api_router)
@@ -85,18 +95,29 @@ logger = logging.getLogger(__name__)
 @app.on_event("startup")
 async def startup_event():
     logger.info("LexiSense API starting up...")
+    
     # Create indexes for better query performance
     await db.users.create_index("email", unique=True)
     await db.users.create_index("organizationId")
     await db.contracts.create_index("organizationId")
     await db.contracts.create_index([("organizationId", 1), ("createdAt", -1)])
     await db.contracts.create_index([("organizationId", 1), ("expiryDate", 1)])
+    await db.contracts.create_index([("organizationId", 1), ("riskLevel", 1)])
+    await db.contracts.create_index([("organizationId", 1), ("contractType", 1)])
     await db.invitations.create_index("token", unique=True)
     await db.invitations.create_index([("organizationId", 1), ("email", 1)])
     await db.contract_versions.create_index([("contractId", 1), ("version", -1)])
     await db.expiration_alerts.create_index([("contractId", 1), ("daysBeforeExpiry", 1)])
+    await db.templates.create_index([("organizationId", 1), ("name", 1)])
     logger.info("Database indexes created")
+    
+    # Initialize scheduler for daily alert emails
+    from services.scheduler_service import init_scheduler
+    init_scheduler(db)
+    logger.info("Scheduler initialized")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    from services.scheduler_service import shutdown_scheduler
+    shutdown_scheduler()
     client.close()

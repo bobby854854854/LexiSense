@@ -27,23 +27,65 @@ def init_db(database):
 async def list_contracts(
     status_filter: Optional[str] = None,
     contract_type: Optional[str] = None,
+    risk_level: Optional[str] = None,
     search: Optional[str] = None,
+    counterparty: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    expiring_within: Optional[int] = None,
+    tags: Optional[str] = None,
+    sort_by: Optional[str] = "createdAt",
+    sort_order: Optional[str] = "desc",
     current_user: dict = Depends(get_current_user)
 ):
-    """List all contracts for the user's organization."""
+    """List all contracts with advanced filtering options."""
     query = {"organizationId": current_user["organizationId"]}
     
-    if status_filter:
+    # Basic filters
+    if status_filter and status_filter != "all":
         query["status"] = status_filter
-    if contract_type:
+    if contract_type and contract_type != "all":
         query["contractType"] = contract_type
+    if risk_level and risk_level != "all":
+        query["riskLevel"] = risk_level
+    if counterparty:
+        query["counterparty"] = {"$regex": counterparty, "$options": "i"}
+    
+    # Text search
     if search:
         query["$or"] = [
             {"title": {"$regex": search, "$options": "i"}},
-            {"counterparty": {"$regex": search, "$options": "i"}}
+            {"counterparty": {"$regex": search, "$options": "i"}},
+            {"tags": {"$regex": search, "$options": "i"}}
         ]
     
-    contracts = await db.contracts.find(query, {"_id": 0, "originalText": 0}).sort("createdAt", -1).to_list(1000)
+    # Date range filters
+    if date_from:
+        query["createdAt"] = {"$gte": date_from}
+    if date_to:
+        if "createdAt" in query:
+            query["createdAt"]["$lte"] = date_to
+        else:
+            query["createdAt"] = {"$lte": date_to}
+    
+    # Expiring within N days
+    if expiring_within:
+        from datetime import timedelta
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        future = (datetime.now(timezone.utc) + timedelta(days=expiring_within)).strftime("%Y-%m-%d")
+        query["expiryDate"] = {"$gte": today, "$lte": future}
+        query["status"] = {"$ne": "expired"}
+    
+    # Tags filter
+    if tags:
+        tag_list = [t.strip() for t in tags.split(",")]
+        query["tags"] = {"$in": tag_list}
+    
+    # Sorting
+    sort_direction = -1 if sort_order == "desc" else 1
+    sort_field = sort_by if sort_by in ["createdAt", "title", "expiryDate", "riskLevel"] else "createdAt"
+    
+    contracts = await db.contracts.find(query, {"_id": 0, "originalText": 0}).sort(sort_field, sort_direction).to_list(1000)
     
     result = []
     for c in contracts:
@@ -212,6 +254,121 @@ async def upload_contract(
         updatedAt=contract.updatedAt,
         uploaderEmail=uploader["email"] if uploader else None
     )
+
+
+@router.post("/bulk")
+async def bulk_upload_contracts(
+    files: List[UploadFile] = File(...),
+    contractType: str = Form("General"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Bulk upload multiple contracts at once."""
+    if len(files) > 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum 10 files allowed per bulk upload"
+        )
+    
+    results = {
+        "successful": [],
+        "failed": []
+    }
+    
+    for file in files:
+        try:
+            if file.content_type not in ALLOWED_MIME_TYPES:
+                results["failed"].append({
+                    "filename": file.filename,
+                    "error": "Invalid file type. Only PDF and TXT files are allowed."
+                })
+                continue
+            
+            file_content = await file.read()
+            
+            if len(file_content) > MAX_FILE_SIZE:
+                results["failed"].append({
+                    "filename": file.filename,
+                    "error": "File size exceeds maximum allowed (10MB)"
+                })
+                continue
+            
+            extracted_text = await extract_text_from_file(file_content, file.content_type)
+            
+            if not extracted_text or len(extracted_text.strip()) == 0:
+                results["failed"].append({
+                    "filename": file.filename,
+                    "error": "Could not extract text from file"
+                })
+                continue
+            
+            storage_key = await upload_file_to_s3(
+                file_content,
+                file.filename,
+                current_user["organizationId"],
+                file.content_type
+            )
+            
+            # Generate title from filename
+            title = file.filename.rsplit(".", 1)[0].replace("_", " ").replace("-", " ").title()
+            
+            # Analyze contract
+            ai_analysis = None
+            risk_level = None
+            effective_date = None
+            expiry_date = None
+            contract_value = None
+            
+            try:
+                ai_analysis = await analyze_contract(extracted_text)
+                if ai_analysis:
+                    risk_level = ai_analysis.get("riskLevel")
+                    dates = ai_analysis.get("dates", {})
+                    effective_date = dates.get("effectiveDate")
+                    expiry_date = dates.get("expiryDate")
+                    contract_value = ai_analysis.get("value")
+            except Exception as e:
+                logger.error(f"AI analysis failed for {file.filename}: {e}")
+            
+            contract = Contract(
+                organizationId=current_user["organizationId"],
+                uploadedBy=current_user["sub"],
+                title=title,
+                contractType=contractType,
+                status="active",
+                value=contract_value,
+                effectiveDate=effective_date,
+                expiryDate=expiry_date,
+                riskLevel=risk_level,
+                originalText=extracted_text,
+                aiAnalysis=ai_analysis,
+                storageKey=storage_key,
+                fileName=file.filename,
+                fileSize=len(file_content),
+                mimeType=file.content_type
+            )
+            
+            await db.contracts.insert_one(contract.model_dump())
+            
+            results["successful"].append({
+                "id": contract.id,
+                "filename": file.filename,
+                "title": title,
+                "riskLevel": risk_level
+            })
+            
+        except Exception as e:
+            logger.error(f"Bulk upload failed for {file.filename}: {e}")
+            results["failed"].append({
+                "filename": file.filename,
+                "error": str(e)
+            })
+    
+    return {
+        "message": f"Processed {len(files)} files",
+        "successful": len(results["successful"]),
+        "failed": len(results["failed"]),
+        "results": results
+    }
 
 
 @router.post("/{contract_id}/chat", response_model=ChatResponse)

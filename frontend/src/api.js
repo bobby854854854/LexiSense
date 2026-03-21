@@ -46,6 +46,9 @@ export const contractsAPI = {
   upload: (formData) => api.post('/contracts', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
+  bulkUpload: (formData) => api.post('/contracts/bulk', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
   update: (id, data) => api.patch(`/contracts/${id}`, data),
   delete: (id) => api.delete(`/contracts/${id}`),
   chat: (id, question) => api.post(`/contracts/${id}/chat`, { question }),
@@ -84,6 +87,27 @@ export const versionsAPI = {
   getVersions: (contractId) => api.get(`/contracts/${contractId}/versions`),
   getVersion: (contractId, versionNum) => api.get(`/contracts/${contractId}/versions/${versionNum}`),
   restore: (contractId, versionNum) => api.post(`/contracts/${contractId}/restore/${versionNum}`),
+};
+
+// Templates API
+export const templatesAPI = {
+  list: (params) => api.get('/templates', { params }),
+  get: (id) => api.get(`/templates/${id}`),
+  getDefault: () => api.get('/templates/default'),
+  create: (data) => api.post('/templates', data),
+  delete: (id) => api.delete(`/templates/${id}`),
+};
+
+// Export API
+export const exportAPI = {
+  contractPDF: (contractId) => api.get(`/export/contract/${contractId}/pdf`, { responseType: 'blob' }),
+  analyticsPDF: () => api.get('/export/analytics/pdf', { responseType: 'blob' }),
+};
+
+// Analytics API
+export const analyticsAPI = {
+  getOverview: () => api.get('/analytics/overview'),
+  compare: (id1, id2) => api.get(`/analytics/contracts/${id1}/compare/${id2}`),
 };
 
 export default api;

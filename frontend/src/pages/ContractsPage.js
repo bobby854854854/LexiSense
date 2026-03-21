@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
-import { contractsAPI } from '../api';
+import { contractsAPI, exportAPI } from '../api';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -32,6 +32,11 @@ import {
 } from '../components/ui/table';
 import { Skeleton } from '../components/ui/skeleton';
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '../components/ui/collapsible';
+import {
   FileText,
   Upload,
   Search,
@@ -41,6 +46,9 @@ import {
   Trash2,
   Eye,
   X,
+  Download,
+  ChevronDown,
+  Files,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -89,8 +97,15 @@ export default function ContractsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [riskFilter, setRiskFilter] = useState('');
+  const [expiringFilter, setExpiringFilter] = useState('');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const [bulkFiles, setBulkFiles] = useState([]);
+  const [bulkContractType, setBulkContractType] = useState('General');
   const [uploadData, setUploadData] = useState({
     title: '',
     counterparty: '',
@@ -102,8 +117,10 @@ export default function ContractsPage() {
     try {
       const params = {};
       if (searchQuery) params.search = searchQuery;
-      if (statusFilter) params.status_filter = statusFilter;
-      if (typeFilter) params.contract_type = typeFilter;
+      if (statusFilter && statusFilter !== 'all') params.status_filter = statusFilter;
+      if (typeFilter && typeFilter !== 'all') params.contract_type = typeFilter;
+      if (riskFilter && riskFilter !== 'all') params.risk_level = riskFilter;
+      if (expiringFilter && expiringFilter !== 'all') params.expiring_within = parseInt(expiringFilter);
       
       const response = await contractsAPI.list(params);
       setContracts(response.data);
@@ -112,7 +129,7 @@ export default function ContractsPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, statusFilter, typeFilter]);
+  }, [searchQuery, statusFilter, typeFilter, riskFilter, expiringFilter]);
 
   useEffect(() => {
     fetchContracts();
@@ -157,6 +174,56 @@ export default function ContractsPage() {
     }
   };
 
+  const handleBulkUpload = async (e) => {
+    e.preventDefault();
+    if (bulkFiles.length === 0) {
+      toast.error('Please select files');
+      return;
+    }
+
+    setBulkUploading(true);
+    const formData = new FormData();
+    bulkFiles.forEach((file) => formData.append('files', file));
+    formData.append('contractType', bulkContractType);
+
+    try {
+      const response = await contractsAPI.bulkUpload(formData);
+      const { successful, failed } = response.data;
+      toast.success(`${successful} uploaded, ${failed} failed`);
+      setBulkUploadOpen(false);
+      setBulkFiles([]);
+      fetchContracts();
+    } catch (error) {
+      toast.error('Bulk upload failed');
+    } finally {
+      setBulkUploading(false);
+    }
+  };
+
+  const handleExportPDF = async (contractId, title) => {
+    try {
+      const response = await exportAPI.contractPDF(contractId);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${title.replace(/\s+/g, '_')}_report.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('PDF downloaded');
+    } catch (error) {
+      toast.error('Failed to export PDF');
+    }
+  };
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('');
+    setTypeFilter('');
+    setRiskFilter('');
+    setExpiringFilter('');
+  };
+
   const formatDate = (dateStr) => {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString();
@@ -178,13 +245,89 @@ export default function ContractsPage() {
             <h1 className="text-3xl font-bold">Contracts</h1>
             <p className="text-muted-foreground mt-1">Manage and analyze your contracts</p>
           </div>
-          <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="upload-contract-btn">
-                <Plus className="mr-2 h-4 w-4" />
-                Upload Contract
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            {/* Bulk Upload */}
+            <Dialog open={bulkUploadOpen} onOpenChange={setBulkUploadOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" data-testid="bulk-upload-btn">
+                  <Files className="mr-2 h-4 w-4" />
+                  Bulk Upload
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Bulk Upload Contracts</DialogTitle>
+                  <DialogDescription>Upload multiple files at once (max 10)</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleBulkUpload} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Contract Type (for all files)</Label>
+                    <Select value={bulkContractType} onValueChange={setBulkContractType}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONTRACT_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Select Files (PDF or TXT)</Label>
+                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                      {bulkFiles.length > 0 ? (
+                        <div className="space-y-2">
+                          {bulkFiles.map((file, i) => (
+                            <div key={i} className="flex items-center justify-between text-sm">
+                              <span>{file.name}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setBulkFiles(bulkFiles.filter((_, j) => j !== i))}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer">
+                          <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">Click to select files</p>
+                          <input
+                            type="file"
+                            accept=".pdf,.txt"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => setBulkFiles(Array.from(e.target.files).slice(0, 10))}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button type="button" variant="outline" className="flex-1" onClick={() => setBulkUploadOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="flex-1" disabled={bulkUploading || bulkFiles.length === 0}>
+                      {bulkUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Upload {bulkFiles.length} Files
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+            
+            {/* Single Upload */}
+            <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
+              <DialogTrigger asChild>
+                <Button data-testid="upload-contract-btn">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Upload Contract
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Upload Contract</DialogTitle>
@@ -295,43 +438,86 @@ export default function ContractsPage() {
         {/* Filters */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search contracts..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                  data-testid="search-input"
-                />
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search contracts..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                    data-testid="search-input"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-40" data-testid="status-filter">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-full sm:w-40" data-testid="type-filter">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    {CONTRACT_TYPES.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <ChevronDown className={`h-4 w-4 mr-1 transition-transform ${advancedOpen ? 'rotate-180' : ''}`} />
+                      Advanced
+                    </Button>
+                  </CollapsibleTrigger>
+                </Collapsible>
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40" data-testid="status-filter">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full sm:w-40" data-testid="type-filter">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  {CONTRACT_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              
+              <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+                <CollapsibleContent className="pt-4 border-t">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Select value={riskFilter} onValueChange={setRiskFilter}>
+                      <SelectTrigger className="w-full sm:w-40">
+                        <SelectValue placeholder="Risk Level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Risk Levels</SelectItem>
+                        <SelectItem value="high">High Risk</SelectItem>
+                        <SelectItem value="medium">Medium Risk</SelectItem>
+                        <SelectItem value="low">Low Risk</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={expiringFilter} onValueChange={setExpiringFilter}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Expiring Within" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Contracts</SelectItem>
+                        <SelectItem value="7">Expiring in 7 days</SelectItem>
+                        <SelectItem value="30">Expiring in 30 days</SelectItem>
+                        <SelectItem value="60">Expiring in 60 days</SelectItem>
+                        <SelectItem value="90">Expiring in 90 days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="ghost" size="sm" onClick={clearFilters}>
+                      Clear All Filters
+                    </Button>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </CardContent>
         </Card>
@@ -407,6 +593,14 @@ export default function ContractsPage() {
                             <Link to={`/contracts/${contract.id}`} data-testid={`view-${contract.id}`}>
                               <Eye className="h-4 w-4" />
                             </Link>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleExportPDF(contract.id, contract.title)}
+                            title="Export PDF"
+                          >
+                            <Download className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"

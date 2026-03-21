@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class LexiSenseAPITester:
-    def __init__(self, base_url="https://stack-deploy-6.preview.emergentagent.com"):
+    def __init__(self, base_url="https://docflow-analyzer.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
