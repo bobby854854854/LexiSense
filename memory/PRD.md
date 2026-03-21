@@ -6,8 +6,9 @@ Build a full stack app using the provided LexiSense.zip - an Enterprise AI-power
 ## User Choices
 - **Database**: Full PostgreSQL schema migration to MongoDB
 - **AI Integration**: GPT-5.2 with Emergent LLM key
-- **Features**: All MVP features (auth, dashboard, contracts, team management)
+- **Features**: All MVP features + email notifications + version history + expiration alerts
 - **Storage**: AWS S3 with placeholder credentials (MOCKED)
+- **Email Service**: Resend API for team invitations and alerts
 
 ## Architecture
 
@@ -17,41 +18,62 @@ Build a full stack app using the provided LexiSense.zip - an Enterprise AI-power
 - **Database**: MongoDB
 - **AI**: GPT-5.2 via emergentintegrations library
 - **Storage**: AWS S3 (placeholder credentials)
+- **Email**: Resend API
 - **Auth**: JWT-based authentication
 
 ### API Endpoints
+**Auth**
 - `POST /api/auth/register` - User registration with organization creation
 - `POST /api/auth/login` - User authentication
 - `GET /api/auth/me` - Get current user
+
+**Dashboard**
 - `GET /api/dashboard/stats` - Dashboard statistics
 - `GET /api/dashboard/activity` - Recent activity
+
+**Contracts**
 - `GET/POST /api/contracts` - List/upload contracts
 - `GET /api/contracts/:id` - Get contract details
+- `PATCH /api/contracts/:id` - Update contract (creates version)
+- `DELETE /api/contracts/:id` - Delete contract
 - `POST /api/contracts/:id/chat` - AI chat about contract
+- `GET /api/contracts/:id/versions` - Get version history
+- `GET /api/contracts/:id/versions/:num` - Get specific version
+- `POST /api/contracts/:id/restore/:num` - Restore to version
+
+**Team**
 - `GET /api/team/members` - List team members
-- `POST /api/team/invite` - Invite team member
+- `POST /api/team/invite` - Invite team member (sends email)
 - `GET /api/team/invitations` - List invitations
 
-## Core Requirements (Static)
-1. User authentication with JWT
-2. Organization-based multi-tenancy
-3. Contract upload with PDF text extraction
-4. AI-powered contract analysis (GPT-5.2)
-5. Contract chat Q&A functionality
-6. Team management with invitations
-7. Role-based access control (admin, user, viewer)
-8. Dashboard with contract metrics
+**Alerts**
+- `GET /api/alerts/settings` - Get alert settings
+- `PUT /api/alerts/settings` - Update alert settings
+- `GET /api/alerts/expiring` - Get expiring contracts
+- `POST /api/alerts/check-and-send` - Send alert emails
+- `GET /api/alerts/history` - Alert history
 
 ## What's Been Implemented
-- [x] User registration/login with JWT (2026-03-20)
-- [x] Organization creation on registration (2026-03-20)
-- [x] Dashboard with stats cards and recent contracts (2026-03-20)
-- [x] Contracts page with upload modal (2026-03-20)
-- [x] Contract detail page with AI analysis tabs (2026-03-20)
-- [x] AI chat interface for contract Q&A (2026-03-20)
-- [x] Team management page (2026-03-20)
-- [x] Team member invitation system (2026-03-20)
-- [x] Professional dark theme enterprise UI (2026-03-20)
+### Phase 1 - MVP (2026-03-20)
+- [x] User registration/login with JWT
+- [x] Organization creation on registration
+- [x] Dashboard with stats cards and recent contracts
+- [x] Contracts page with upload modal
+- [x] Contract detail page with AI analysis tabs
+- [x] AI chat interface for contract Q&A
+- [x] Team management page
+- [x] Team member invitation system
+- [x] Professional dark theme enterprise UI
+
+### Phase 2 - Enhanced Features (2026-03-20)
+- [x] Email service integration (Resend API)
+- [x] Team invitation emails with branded HTML templates
+- [x] Contract version history tracking
+- [x] Version restore functionality
+- [x] Expiration alerts system
+- [x] Configurable alert settings (days before expiry)
+- [x] Alert email notifications
+- [x] Alerts dashboard page
 
 ## User Personas
 1. **Legal Counsel** - Reviews and analyzes contracts for risks
@@ -61,28 +83,29 @@ Build a full stack app using the provided LexiSense.zip - an Enterprise AI-power
 
 ## Mocked/Placeholder Components
 - **AWS S3 Storage**: Using placeholder credentials, returns mock storage keys
-- Real file content is still processed but not persisted to S3
 
 ## Prioritized Backlog
 
-### P0 - Critical (MVP Complete)
+### P0 - Critical (Complete)
 - [x] All core features implemented
+- [x] Email notifications
+- [x] Version history
+- [x] Expiration alerts
 
 ### P1 - Important
-- [ ] Email notifications for invitations (SendGrid/Resend integration)
-- [ ] Contract version history
 - [ ] Bulk contract upload
 - [ ] Advanced search filters
+- [ ] Contract comparison view
+- [ ] Export contracts to PDF
 
 ### P2 - Nice to Have
 - [ ] Contract templates library
-- [ ] Contract comparison view
 - [ ] Analytics charts and reports
-- [ ] Export contracts to PDF
 - [ ] Mobile responsive improvements
+- [ ] Dark/Light theme toggle
 
 ## Next Tasks
-1. Add real AWS S3 credentials for production
-2. Implement email service for team invitations
-3. Add contract version history tracking
-4. Create analytics/reporting dashboard
+1. Add real AWS S3 credentials for production file storage
+2. Set up scheduled job for automatic daily alert emails
+3. Add contract comparison view
+4. Implement bulk upload functionality
