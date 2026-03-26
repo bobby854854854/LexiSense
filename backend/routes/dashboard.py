@@ -88,11 +88,11 @@ async def get_recent_activity(current_user: dict = Depends(get_current_user)):
     ).sort("createdAt", -1).limit(10).to_list(10)
     
     activity = []
+    uploader_ids = list(set(c["uploadedBy"] for c in recent_contracts if c.get("uploadedBy")))
+    uploaders = await db.users.find({"id": {"$in": uploader_ids}}, {"_id": 0, "id": 1, "email": 1, "firstName": 1, "lastName": 1}).to_list(len(uploader_ids))
+    uploader_map = {u["id"]: u for u in uploaders}
     for contract in recent_contracts:
-        uploader = await db.users.find_one(
-            {"id": contract["uploadedBy"]},
-            {"_id": 0, "email": 1, "firstName": 1, "lastName": 1}
-        )
+        uploader = uploader_map.get(contract["uploadedBy"])
         activity.append({
             "type": "contract_uploaded",
             "contractId": contract["id"],

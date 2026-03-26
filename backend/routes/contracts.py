@@ -532,8 +532,10 @@ async def get_contract_versions(
     ).sort("version", -1).to_list(100)
     
     result = []
+    changer_ids = list(set(v["changedBy"] for v in versions if v.get("changedBy")))
+    changers = await db.users.find({"id": {"$in": changer_ids}}, {"_id": 0, "id": 1, "email": 1}).to_list(len(changer_ids))
+    changer_map = {u["id"]: u["email"] for u in changers}
     for v in versions:
-        user = await db.users.find_one({"id": v["changedBy"]}, {"_id": 0, "email": 1})
         result.append(ContractVersionResponse(
             id=v["id"],
             contractId=v["contractId"],
@@ -541,7 +543,7 @@ async def get_contract_versions(
             title=v["title"],
             status=v["status"],
             changedBy=v["changedBy"],
-            changedByEmail=user["email"] if user else None,
+            changedByEmail=changer_map.get(v["changedBy"]),
             changeReason=v.get("changeReason"),
             createdAt=v["createdAt"]
         ))
