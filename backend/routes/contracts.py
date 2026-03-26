@@ -88,9 +88,13 @@ async def list_contracts(
     
     contracts = await db.contracts.find(query, {"_id": 0, "originalText": 0}).sort(sort_field, sort_direction).to_list(1000)
     
+    # Batch fetch uploader emails to avoid N+1 queries
+    uploader_ids = list(set(c.get("uploadedBy") for c in contracts if c.get("uploadedBy")))
+    uploaders = await db.users.find({"id": {"$in": uploader_ids}}, {"_id": 0, "id": 1, "email": 1}).to_list(len(uploader_ids))
+    uploader_map = {u["id"]: u["email"] for u in uploaders}
+    
     result = []
     for c in contracts:
-        uploader = await db.users.find_one({"id": c.get("uploadedBy")}, {"_id": 0, "email": 1})
         result.append(ContractResponse(
             id=c["id"],
             organizationId=c["organizationId"],
@@ -109,7 +113,7 @@ async def list_contracts(
             tags=c.get("tags", []),
             createdAt=c["createdAt"],
             updatedAt=c["updatedAt"],
-            uploaderEmail=uploader["email"] if uploader else None
+            uploaderEmail=uploader_map.get(c.get("uploadedBy"))
         ))
     
     return result

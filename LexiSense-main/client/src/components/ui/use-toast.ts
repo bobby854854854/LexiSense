@@ -1,3 +1,0 @@
-export const useToast = () => ({
-  toast: (options: any) => console.log(options),
-})

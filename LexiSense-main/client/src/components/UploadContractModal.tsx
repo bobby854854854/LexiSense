@@ -1,9 +1,0 @@
-export const UploadContractModal = ({
-  isOpen,
-  onOpenChange,
-  onUploadSuccess,
-}: {
-  isOpen: boolean
-  onOpenChange: (isOpen: boolean) => void
-  onUploadSuccess: (contract: any) => void
-}) => null
