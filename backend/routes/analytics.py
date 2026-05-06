@@ -79,10 +79,13 @@ async def get_analytics_overview(
         {"$limit": 5}
     ]).to_list(5)
     
-    # Get user emails for top uploaders
+    # Get user emails for top uploaders (batch fetch)
+    uploader_ids = [item["_id"] for item in uploads_by_user]
+    users = await db.users.find({"id": {"$in": uploader_ids}}, {"_id": 0, "id": 1, "email": 1, "firstName": 1, "lastName": 1}).to_list(len(uploader_ids))
+    user_map = {u["id"]: u for u in users}
     top_uploaders = []
     for item in uploads_by_user:
-        user = await db.users.find_one({"id": item["_id"]}, {"_id": 0, "email": 1, "firstName": 1, "lastName": 1})
+        user = user_map.get(item["_id"])
         if user:
             top_uploaders.append({
                 "user": user.get("firstName", user["email"].split("@")[0]),
